@@ -1,4 +1,35 @@
+# ── Dependencies ──────────────────────────────────────────────────────────────
 node_modules/
+
+# ── Environment / Secrets ─────────────────────────────────────────────────────
 .env
+.env.local
+.env.production
+.env.*.local
+
+# ── User Uploads (runtime files, not part of source) ─────────────────────────
 public/uploads/
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── OS Files ──────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editor / IDE ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ── Build / Cache ─────────────────────────────────────────────────────────────
+dist/
+build/
+.cache/
