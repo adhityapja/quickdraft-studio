@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — QuickDraft Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/admin/admin.css"/>
+</head>
+<body>
+
+<!-- ══ LOGIN SCREEN ══════════════════════════════════════════════════════════ -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="/assets/logo.png" alt="QuickDraft Studio"/>
+      <h1>QuickDraft<br/>Studio</h1>
+    </div>
+    <h2 class="login-title">Admin Login</h2>
+    <p class="login-sub">Enter your credentials to manage the portfolio</p>
+    <form id="loginForm">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="loginUser" placeholder="admin" autocomplete="username" required/>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" required/>
+      </div>
+      <div class="login-error" id="loginError"></div>
+      <button type="submit" class="btn-primary" id="loginBtn">Sign In</button>
+    </form>
+    <a href="/" class="back-link">← Back to Portfolio</a>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ══════════════════════════════════════════════════════════════ -->
+<div class="dashboard hidden" id="dashboard">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="/assets/logo.png" alt="QD"/>
+      <span>QuickDraft</span>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-panel="overview" id="nb-overview">
+        <span class="nav-icon">📊</span><span>Overview</span>
+      </button>
+      <button class="nav-item" data-panel="about" id="nb-about">
+        <span class="nav-icon">ℹ️</span><span>About</span>
+      </button>
+      <button class="nav-item" data-panel="delivered" id="nb-delivered">
+        <span class="nav-icon">📦</span><span>Delivered Contents</span>
+      </button>
+      <button class="nav-item" data-panel="samples" id="nb-samples">
+        <span class="nav-icon">🌐</span><span>Sample Sites</span>
+      </button>
+      <button class="nav-item" data-panel="clients" id="nb-clients">
+        <span class="nav-icon">👥</span><span>Our Clients</span>
+      </button>
+      <button class="nav-item" data-panel="contact" id="nb-contact">
+        <span class="nav-icon">📞</span><span>Contact Info</span>
+      </button>
+      <button class="nav-item" data-panel="password" id="nb-password">
+        <span class="nav-icon">🔐</span><span>Change Password</span>
+      </button>
+    </nav>
+    <button class="logout-btn" id="logoutBtn">⏻ Logout</button>
+  </aside>
+
+  <!-- Main -->
+  <main class="main-content">
+    <header class="topbar">
+      <div class="topbar-title" id="topbarTitle">Overview</div>
+      <div class="topbar-user" id="topbarUser">admin</div>
+    </header>
+
+    <!-- ── OVERVIEW ──────────────────────────── -->
+    <div class="panel" id="panel-overview">
+      <div class="stats-row" id="overviewStats">
+        <div class="ov-card"><div class="ov-num" id="ov-clients">—</div><div class="ov-label">Clients</div></div>
+        <div class="ov-card"><div class="ov-num" id="ov-delivered">—</div><div class="ov-label">Delivered</div></div>
+        <div class="ov-card"><div class="ov-num" id="ov-samples">—</div><div class="ov-label">Sample Sites</div></div>
+      </div>
+      <div class="welcome-msg">
+        <h2>Welcome back 👋</h2>
+        <p>Use the sidebar to manage your portfolio content. All changes reflect immediately on the live site.</p>
+        <a href="/" target="_blank" class="btn-outline">View Live Site ↗</a>
+      </div>
+    </div>
+
+    <!-- ── ABOUT ──────────────────────────────── -->
+    <div class="panel hidden" id="panel-about">
+      <div class="panel-header"><h2>About Section</h2></div>
+      <form id="aboutForm" class="settings-form">
+        <div class="field">
+          <label>Studio Tagline</label>
+          <input type="text" id="ab-tagline" placeholder="We Craft Digital Experiences"/>
+        </div>
+        <div class="field">
+          <label>Studio Description</label>
+          <textarea id="ab-description" rows="4" placeholder="Describe your studio..."></textarea>
+        </div>
+        <div class="panel-header" style="margin-top:16px"><h3>Stats (up to 4)</h3></div>
+        <div class="stats-editor" id="statsEditor">
+          <!-- injected by JS -->
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" id="saveAbout">Save Changes</button>
+          <span class="save-msg" id="aboutMsg"></span>
+        </div>
+      </form>
+    </div>
+
+    <!-- ── DELIVERED CONTENTS ─────────────────── -->
+    <div class="panel hidden" id="panel-delivered">
+      <div class="panel-header">
+        <h2>Delivered Contents</h2>
+        <button class="btn-primary btn-sm" id="addDeliveredBtn">+ Add New</button>
+      </div>
+      <div id="deliveredList" class="item-list"></div>
+      <!-- Add/Edit Drawer -->
+      <div class="drawer hidden" id="deliveredDrawer">
+        <div class="drawer-header">
+          <h3 id="deliveredDrawerTitle">Add Content</h3>
+          <button class="close-drawer" id="closeDelivered">✕</button>
+        </div>
+        <form id="deliveredForm">
+          <input type="hidden" id="d-id"/>
+          <div class="field"><label>Title</label><input type="text" id="d-title" required/></div>
+          <div class="field">
+            <label>Type</label>
+            <select id="d-type">
+              <option>Video</option><option>Reel</option><option>Design</option><option>Other</option>
+            </select>
+          </div>
+          <div class="field"><label>Description</label><textarea id="d-desc" rows="3"></textarea></div>
+          <div class="field"><label>Link (optional)</label><input type="url" id="d-link" placeholder="https://..."/></div>
+          <div class="field"><label>Thumbnail Image</label><input type="file" id="d-thumb" accept="image/*"/><div class="img-preview" id="d-thumb-preview"></div></div>
+          <div class="field"><label>Order</label><input type="number" id="d-order" value="0" min="0"/></div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Save</button>
+            <span class="save-msg" id="deliveredMsg"></span>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── SAMPLE SITES ───────────────────────── -->
+    <div class="panel hidden" id="panel-samples">
+      <div class="panel-header">
+        <h2>Sample Sites</h2>
+        <button class="btn-primary btn-sm" id="addSampleBtn">+ Add New</button>
+      </div>
+      <div id="samplesList" class="item-list"></div>
+      <div class="drawer hidden" id="samplesDrawer">
+        <div class="drawer-header">
+          <h3 id="samplesDrawerTitle">Add Sample Site</h3>
+          <button class="close-drawer" id="closeSamples">✕</button>
+        </div>
+        <form id="samplesForm">
+          <input type="hidden" id="s-id"/>
+          <div class="field"><label>Site Name</label><input type="text" id="s-name" required/></div>
+          <div class="field"><label>URL</label><input type="url" id="s-url" placeholder="https://..."/></div>
+          <div class="field"><label>Description</label><textarea id="s-desc" rows="3"></textarea></div>
+          <div class="field"><label>Tags (comma-separated)</label><input type="text" id="s-tags" placeholder="Web Design, Landing Page"/></div>
+          <div class="field"><label>Preview Image</label><input type="file" id="s-preview" accept="image/*"/><div class="img-preview" id="s-preview-preview"></div></div>
+          <div class="field"><label>Order</label><input type="number" id="s-order" value="0" min="0"/></div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Save</button>
+            <span class="save-msg" id="samplesMsg"></span>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── CLIENTS ───────────────────────────── -->
+    <div class="panel hidden" id="panel-clients">
+      <div class="panel-header">
+        <h2>Our Clients</h2>
+        <button class="btn-primary btn-sm" id="addClientBtn">+ Add New</button>
+      </div>
+      <div id="clientsList" class="item-list"></div>
+      <div class="drawer hidden" id="clientsDrawer">
+        <div class="drawer-header">
+          <h3 id="clientsDrawerTitle">Add Client</h3>
+          <button class="close-drawer" id="closeClients">✕</button>
+        </div>
+        <form id="clientsForm">
+          <input type="hidden" id="c-id"/>
+          <div class="field"><label>Client Name</label><input type="text" id="c-name" required/></div>
+          <div class="field"><label>Instagram Handle</label><input type="text" id="c-handle" placeholder="@clientname" required/></div>
+          <div class="field"><label>Screenshot (IG Page)</label><input type="file" id="c-screen" accept="image/*"/><div class="img-preview" id="c-screen-preview"></div></div>
+          <div class="field"><label>Order</label><input type="number" id="c-order" value="0" min="0"/></div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Save</button>
+            <span class="save-msg" id="clientsMsg"></span>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── CONTACT ───────────────────────────── -->
+    <div class="panel hidden" id="panel-contact">
+      <div class="panel-header"><h2>Contact Information</h2></div>
+      <form id="contactForm" class="settings-form">
+        <div class="field"><label>Phone Number</label><input type="text" id="ct-phone" placeholder="+91 9876543210"/></div>
+        <div class="field"><label>Email Address</label><input type="email" id="ct-email" placeholder="hello@quickdraft.studio"/></div>
+        <div class="field"><label>Instagram Handle</label><input type="text" id="ct-insta" placeholder="@quickdraft.studio"/></div>
+        <div class="field"><label>WhatsApp Number</label><input type="text" id="ct-whatsapp" placeholder="+91 9876543210"/></div>
+        <div class="field"><label>Address</label><input type="text" id="ct-address" placeholder="Tamil Nadu, India"/></div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Save Changes</button>
+          <span class="save-msg" id="contactMsg"></span>
+        </div>
+      </form>
+    </div>
+
+    <!-- ── CHANGE PASSWORD ───────────────────── -->
+    <div class="panel hidden" id="panel-password">
+      <div class="panel-header"><h2>Change Password</h2></div>
+      <form id="passwordForm" class="settings-form">
+        <div class="field"><label>Current Password</label><input type="password" id="pw-current" required/></div>
+        <div class="field"><label>New Password</label><input type="password" id="pw-new" required/></div>
+        <div class="field"><label>Confirm New Password</label><input type="password" id="pw-confirm" required/></div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Update Password</button>
+          <span class="save-msg" id="pwMsg"></span>
+        </div>
+      </form>
+    </div>
+
+  </main>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay hidden" id="confirmModal">
+  <div class="modal-box">
+    <h3>Confirm Delete</h3>
+    <p id="confirmText">Are you sure you want to delete this item?</p>
+    <div class="modal-actions">
+      <button class="btn-outline" id="cancelDelete">Cancel</button>
+      <button class="btn-danger" id="confirmDelete">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="/admin/admin.js"></script>
+</body>
+</html>

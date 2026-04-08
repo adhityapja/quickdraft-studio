@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuickDraft Studio | Creative Agency</title>
+  <meta name="description" content="QuickDraft Studio — We craft digital experiences. Web development, video editing, social media content and digital branding." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-brand">
+      <img src="/assets/logo.png" alt="QuickDraft Studio" class="nav-logo-img" />
+      <span class="nav-name">QuickDraft Studio</span>
+    </div>
+    <div class="nav-links">
+      <a href="#about" data-section="about">About</a>
+      <a href="#delivered" data-section="delivered">Work</a>
+      <a href="#samples" data-section="samples">Sites</a>
+      <a href="#clients" data-section="clients">Clients</a>
+      <a href="#contact" data-section="contact">Contact</a>
+    </div>
+  </nav>
+
+  <!-- MAIN SCROLL CONTAINER -->
+  <div class="scroll-container" id="scrollContainer">
+
+    <!-- SECTION 1: LANDING -->
+    <section class="section" id="landing" data-section="landing">
+      <canvas id="canvas"></canvas>
+      <div class="landing-overlay"></div>
+      <div class="landing-content">
+        <img src="/assets/logo.png" alt="QuickDraft Studio" class="landing-logo" />
+        <h1 class="landing-title">QuickDraft Studio</h1>
+        <p class="landing-tagline" id="landingTagline">We Craft Digital Experiences</p>
+        <div class="landing-cta">
+          <a href="#about" class="btn-primary" id="exploreBtn">Explore Our Work</a>
+        </div>
+      </div>
+      <div class="scroll-indicator">
+        <span>Scroll</span>
+        <div class="scroll-line"></div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: ABOUT -->
+    <section class="section section-dark" id="about" data-section="about">
+      <div class="section-inner">
+        <div class="about-grid">
+          <div class="about-left reveal">
+            <span class="section-label">Who We Are</span>
+            <h2 class="section-title">Crafting Stories<br />Through <span class="gradient-text">Digital Art</span></h2>
+            <p class="about-description" id="aboutDescription">
+              QuickDraft Studio is a creative agency specializing in web development, video editing, social media content, and digital branding.
+            </p>
+            <div class="about-services">
+              <div class="service-tag">🌐 Web Development</div>
+              <div class="service-tag">🎬 Video Editing</div>
+              <div class="service-tag">📱 Social Media</div>
+              <div class="service-tag">🎨 Brand Design</div>
+            </div>
+          </div>
+          <div class="about-right reveal">
+            <div class="stats-grid" id="statsGrid">
+              <div class="stat-card">
+                <div class="stat-number">50+</div>
+                <div class="stat-label">Projects Delivered</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">30+</div>
+                <div class="stat-label">Happy Clients</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">3+</div>
+                <div class="stat-label">Years Experience</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Client Satisfaction</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: DELIVERED CONTENTS -->
+    <section class="section section-darker" id="delivered" data-section="delivered">
+      <div class="section-inner">
+        <div class="section-header reveal">
+          <span class="section-label">Our Work</span>
+          <h2 class="section-title">Delivered <span class="gradient-text">Contents</span></h2>
+          <p class="section-subtitle">A look at what we've created for our clients</p>
+        </div>
+        <div class="cards-grid" id="deliveredGrid">
+          <!-- cards injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: SAMPLE SITES -->
+    <section class="section section-dark" id="samples" data-section="samples">
+      <div class="section-inner">
+        <div class="section-header reveal">
+          <span class="section-label">Portfolio</span>
+          <h2 class="section-title">Sample <span class="gradient-text">Sites</span></h2>
+          <p class="section-subtitle">Websites we've designed and built</p>
+        </div>
+        <div class="sites-grid" id="samplesGrid">
+          <!-- cards injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: OUR CLIENTS -->
+    <section class="section section-darker" id="clients" data-section="clients">
+      <div class="section-inner">
+        <div class="section-header reveal">
+          <span class="section-label">Trusted By</span>
+          <h2 class="section-title">Our <span class="gradient-text">Clients</span></h2>
+          <p class="section-subtitle">Brands we've had the pleasure of working with</p>
+        </div>
+        <div class="clients-grid" id="clientsGrid">
+          <!-- cards injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: CONTACT -->
+    <section class="section section-dark" id="contact" data-section="contact">
+      <div class="section-inner">
+        <div class="contact-layout">
+          <div class="contact-left reveal">
+            <span class="section-label">Get In Touch</span>
+            <h2 class="section-title">Let's Work<br /><span class="gradient-text">Together</span></h2>
+            <p class="contact-intro">Have a project in mind? We'd love to hear from you. Reach out and let's create something amazing.</p>
+            <div class="contact-cards" id="contactCards">
+              <!-- injected by JS -->
+            </div>
+          </div>
+          <div class="contact-right reveal">
+            <form class="contact-form" id="contactForm">
+              <div class="form-group">
+                <label>Your Name</label>
+                <input type="text" id="cfName" placeholder="John Doe" required />
+              </div>
+              <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="cfEmail" placeholder="john@example.com" required />
+              </div>
+              <div class="form-group">
+                <label>Message</label>
+                <textarea id="cfMessage" rows="5" placeholder="Tell us about your project..." required></textarea>
+              </div>
+              <button type="submit" class="btn-primary btn-full" id="sendBtn">Send Message ✨</button>
+              <div class="form-feedback" id="formFeedback"></div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <footer class="footer">
+        <p>Crafted with ♥ by <strong>QuickDraft Studio</strong> &copy; <span id="year"></span></p>
+      </footer>
+    </section>
+
+  </div><!-- /scroll-container -->
+
+  <!-- NAV DOTS -->
+  <div class="nav-dots" id="navDots">
+    <button class="dot active" data-target="landing" title="Home"></button>
+    <button class="dot" data-target="about" title="About"></button>
+    <button class="dot" data-target="delivered" title="Delivered Contents"></button>
+    <button class="dot" data-target="samples" title="Sample Sites"></button>
+    <button class="dot" data-target="clients" title="Our Clients"></button>
+    <button class="dot" data-target="contact" title="Contact"></button>
+  </div>
+
+  <script type="module" src="/main.js"></script>
+</body>
+</html>
