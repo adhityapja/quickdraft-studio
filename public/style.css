@@ -42,8 +42,76 @@ body {
   position: relative;
   overflow: hidden;
 }
-.section-dark { background: var(--bg); }
-.section-darker { background: var(--bg-alt); }
+
+/* Dot-grid texture on all content sections */
+.section-dark, .section-darker {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.032) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.section-dark  { background-color: var(--bg); }
+.section-darker { background-color: var(--bg-alt); }
+
+/* Glowing blob decorations per section */
+#about::before {
+  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  top: -180px; left: -180px; width: 620px; height: 620px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(123,91,219,0.20) 0%, transparent 65%);
+}
+#about::after {
+  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  bottom: -120px; right: -120px; width: 420px; height: 420px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,179,71,0.12) 0%, transparent 65%);
+}
+#delivered::before {
+  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  top: -120px; right: -150px; width: 560px; height: 560px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(64,156,255,0.15) 0%, transparent 65%);
+}
+#delivered::after {
+  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  bottom: -100px; left: -100px; width: 360px; height: 360px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(123,91,219,0.12) 0%, transparent 65%);
+}
+#samples::before {
+  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  bottom: -140px; right: -140px; width: 560px; height: 560px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,214,198,0.13) 0%, transparent 65%);
+}
+#samples::after {
+  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  top: -100px; left: -100px; width: 380px; height: 380px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(155,127,232,0.14) 0%, transparent 65%);
+}
+#clients::before {
+  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  top: -140px; left: -140px; width: 560px; height: 560px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,75,145,0.14) 0%, transparent 65%);
+}
+#clients::after {
+  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  bottom: -100px; right: -100px; width: 380px; height: 380px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,179,71,0.10) 0%, transparent 65%);
+}
+#contact::before {
+  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 700px; height: 700px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(123,91,219,0.16) 0%, transparent 60%);
+}
+#contact::after {
+  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(123,91,219,0.6), transparent);
+}
+
+/* Glowing top-edge accent line on each content section */
+.section-dark::before,
+.section-darker::before {
+  box-shadow: none; /* don't let the rule above interfere */
+}
+#about, #delivered, #samples, #clients {
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
 
 .section-inner {
   height: 100%;
@@ -53,6 +121,8 @@ body {
   justify-content: center;
   gap: 40px;
   overflow-y: auto;
+  position: relative; /* sit above blob pseudo-elements */
+  z-index: 1;
 }
 
 /* ─── NAVBAR ────────────────────────────────────────────────────────────────── */
