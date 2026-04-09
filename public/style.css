@@ -481,15 +481,124 @@ body {
   padding: 60px 0; font-size: 0.95rem;
 }
 
-/* ─── RESPONSIVE ────────────────────────────────────────────────────────────── */
-@media (max-width: 900px) {
-  .about-grid { grid-template-columns: 1fr; gap: 32px; }
-  .contact-layout { grid-template-columns: 1fr; padding: 90px 6% 80px; overflow-y: auto; }
-  .nav-links { display: none; }
-  .landing-title { letter-spacing: -1px; }
+/* ─── HAMBURGER MENU ─────────────────────────────────────────────────────────── */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px; height: 40px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  cursor: pointer;
+  z-index: 1100;
+  transition: background var(--transition);
 }
-@media (max-width: 600px) {
-  .section-inner { padding: 90px 5% 50px; }
-  .stats-grid { grid-template-columns: 1fr 1fr; }
-  .cards-grid, .sites-grid, .clients-grid { grid-template-columns: 1fr; }
+.hamburger span {
+  display: block; width: 20px; height: 2px;
+  background: var(--text); border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ─── MOBILE NAV OVERLAY ─────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .hamburger { display: flex; }
+
+  .nav-links {
+    position: fixed;
+    inset: 0;
+    background: rgba(6,6,17,0.97);
+    backdrop-filter: blur(24px);
+    z-index: 1050;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 36px;
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+    pointer-events: none;
+  }
+  .nav-links.mobile-open {
+    transform: translateX(0);
+    pointer-events: all;
+  }
+  .nav-links a {
+    font-size: 1.6rem !important;
+    letter-spacing: 3px;
+    color: var(--text) !important;
+  }
+  .nav-links a::after { bottom: -6px; }
+
+  /* Hide nav dots on mobile — they overlap content */
+  .nav-dots { display: none; }
+
+  /* Landing section */
+  .landing-logo { width: 80px; height: 80px; }
+  .landing-title { font-size: clamp(2rem, 10vw, 3.5rem); letter-spacing: -1px; }
+  .landing-tagline { font-size: clamp(0.7rem, 3vw, 1rem); letter-spacing: 3px; }
+
+  /* About */
+  .about-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    align-items: start;
+    height: auto;
+  }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat-card { padding: 20px 14px; }
+  .stat-number { font-size: 1.8rem; }
+
+  /* Section inner */
+  .section-inner {
+    padding: 80px 5% 60px;
+    gap: 24px;
+  }
+
+  /* Cards / grids */
+  .cards-grid { grid-template-columns: 1fr; max-height: none; }
+  .sites-grid  { grid-template-columns: 1fr; max-height: none; }
+  .clients-grid { grid-template-columns: repeat(2, 1fr); max-height: none; }
+
+  /* Contact — stack layout */
+  .contact-layout {
+    grid-template-columns: 1fr;
+    padding: 80px 5% 80px;
+    gap: 32px;
+    height: auto;
+    overflow-y: auto;
+  }
+  .contact-left {
+    max-height: none;
+    overflow-y: visible;
+    padding-bottom: 0;
+  }
+
+  /* Section heights — allow natural height on mobile so content isn't clipped */
+  .section {
+    height: auto;
+    min-height: 100svh;
+    scroll-snap-align: start;
+  }
+  .scroll-container {
+    scroll-snap-type: y proximity;
+  }
+
+  /* Footer spacing */
+  .footer { position: relative; }
+}
+
+/* ─── SMALL PHONES ───────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .section-inner { padding: 76px 4% 48px; }
+  .clients-grid { grid-template-columns: 1fr; }
+  .service-tag { font-size: 0.78rem; padding: 6px 14px; }
+  .btn-primary { padding: 12px 24px; font-size: 0.88rem; }
+  .section-title { font-size: clamp(1.6rem, 7vw, 2.4rem); }
+  .nav-brand .nav-name { font-size: 0.95rem; }
 }
