@@ -171,4 +171,66 @@ router.put('/admin/password', protect, async (req, res) => {
   } catch { res.status(500).json({ message: 'Server error' }); }
 });
 
+// ── Contact Form ──────────────────────────────────────────────────────────────
+router.post('/contact', async (req, res) => {
+  const { name, email, message } = req.body;
+  if (!name || !email || !message)
+    return res.status(400).json({ message: 'All fields are required.' });
+
+  try {
+    // Get the admin's configured email from SiteSettings
+    const contactSetting = await SiteSettings.findOne({ key: 'contact' });
+    const toEmail = contactSetting?.value?.email;
+
+    if (!toEmail) {
+      return res.status(503).json({ message: 'Contact email not configured yet.' });
+    }
+
+    const nodemailer = require('nodemailer');
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `"QuickDraft Studio" <${process.env.GMAIL_USER}>`,
+      to: toEmail,
+      replyTo: `"${name}" <${email}>`,
+      subject: `📩 New Inquiry from ${name} — QuickDraft Studio`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#060611;color:#E8E8F0;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.1)">
+          <div style="background:linear-gradient(135deg,#7B5BDB,#9b7fe8);padding:28px 32px">
+            <h2 style="margin:0;color:#fff;font-size:1.4rem">New Contact Form Message</h2>
+            <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:0.9rem">QuickDraft Studio Portfolio</p>
+          </div>
+          <div style="padding:32px">
+            <table style="width:100%;border-collapse:collapse">
+              <tr>
+                <td style="padding:10px 0;color:rgba(232,232,240,0.6);font-size:0.85rem;width:100px">NAME</td>
+                <td style="padding:10px 0;font-weight:700">${name}</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;color:rgba(232,232,240,0.6);font-size:0.85rem">EMAIL</td>
+                <td style="padding:10px 0"><a href="mailto:${email}" style="color:#9b7fe8">${email}</a></td>
+              </tr>
+            </table>
+            <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:20px 0"/>
+            <p style="color:rgba(232,232,240,0.6);font-size:0.85rem;margin-bottom:10px">MESSAGE</p>
+            <p style="line-height:1.7;background:rgba(255,255,255,0.04);border-radius:8px;padding:16px;border-left:3px solid #7B5BDB">${message.replace(/\n/g, '<br/>')}</p>
+            <p style="color:rgba(232,232,240,0.45);font-size:0.78rem;margin-top:24px">You can reply directly to this email to respond to ${name}.</p>
+          </div>
+        </div>`,
+    });
+
+    res.json({ message: 'Message sent successfully!' });
+  } catch (err) {
+    console.error('Mail error:', err.message);
+    res.status(500).json({ message: 'Failed to send email. Please try again.' });
+  }
+});
+
 module.exports = router;

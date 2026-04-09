@@ -237,27 +237,40 @@ function renderContact(data) {
 // ── Contact Form ─────────────────────────────────────────────────────────────
 document.getElementById('contactForm')?.addEventListener('submit', async e => {
   e.preventDefault();
-  const btn = document.getElementById('sendBtn');
+  const btn      = document.getElementById('sendBtn');
   const feedback = document.getElementById('formFeedback');
-  const name = document.getElementById('cfName').value;
-  const email = document.getElementById('cfEmail').value;
-  const message = document.getElementById('cfMessage').value;
+  const name     = document.getElementById('cfName').value.trim();
+  const email    = document.getElementById('cfEmail').value.trim();
+  const message  = document.getElementById('cfMessage').value.trim();
 
   btn.textContent = 'Sending...';
   btn.disabled = true;
+  feedback.textContent = '';
+  feedback.className = 'form-feedback';
 
-  // Open mailto as fallback
-  const subject = encodeURIComponent(`Portfolio Inquiry from ${name}`);
-  const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`);
-  window.location.href = `mailto:hello@quickdraft.studio?subject=${subject}&body=${body}`;
+  try {
+    const res = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, message }),
+    });
 
-  setTimeout(() => {
-    feedback.textContent = '✅ Message opened in your mail app!';
-    feedback.className = 'form-feedback success';
+    const data = await res.json();
+
+    if (res.ok) {
+      feedback.textContent = '✅ Message sent! We\'ll get back to you soon.';
+      feedback.className = 'form-feedback success';
+      e.target.reset();
+    } else {
+      throw new Error(data.message || 'Something went wrong.');
+    }
+  } catch (err) {
+    feedback.textContent = `❌ ${err.message}`;
+    feedback.className = 'form-feedback error';
+  } finally {
     btn.textContent = 'Send Message ✨';
     btn.disabled = false;
-    e.target.reset();
-  }, 1000);
+  }
 });
 
 // ── Misc ─────────────────────────────────────────────────────────────────────
