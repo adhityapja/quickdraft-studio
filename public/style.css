@@ -406,20 +406,16 @@ body {
 
 /* ─── CONTACT ───────────────────────────────────────────────────────────────── */
 .contact-layout {
-  height: 100%; display: flex;
+  display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 100px 8% 60px;
   max-width: 680px;
   margin: 0 auto;
   width: 100%;
+  gap: 20px;
 }
 .contact-left {
   display: flex; flex-direction: column; gap: 20px;
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
-  padding-bottom: 56px; /* clears the footer */
-  padding-right: 4px;
 }
 .contact-intro { color: var(--muted); line-height: 1.8; font-size: 1rem; max-width: 420px; }
 .contact-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
