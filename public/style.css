@@ -123,10 +123,11 @@ body {
 }
 .landing-content {
   position: relative; z-index: 2;
-  height: 100%;
+  min-height: 100svh;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   text-align: center; gap: 16px;
+  padding: 80px 20px 40px; /* top clears navbar */
 }
 .landing-logo {
   width: 110px; height: 110px; object-fit: contain;
@@ -539,9 +540,10 @@ body {
   .nav-dots { display: none; }
 
   /* Landing section */
-  .landing-logo { width: 80px; height: 80px; }
-  .landing-title { font-size: clamp(2rem, 10vw, 3.5rem); letter-spacing: -1px; }
-  .landing-tagline { font-size: clamp(0.7rem, 3vw, 1rem); letter-spacing: 3px; }
+  .landing-content { padding-top: 80px; } /* clear fixed navbar */
+  .landing-logo { width: 72px; height: 72px; }
+  .landing-title { font-size: clamp(1.8rem, 9vw, 3.2rem); letter-spacing: -1px; }
+  .landing-tagline { font-size: clamp(0.65rem, 3vw, 0.95rem); letter-spacing: 2px; }
 
   /* About */
   .about-grid {
@@ -580,7 +582,12 @@ body {
   }
 
   /* Section heights — allow natural height on mobile so content isn't clipped */
-  .section {
+  /* Landing stays 100svh so flex-center works; other sections grow naturally */
+  #landing {
+    height: 100svh;
+    min-height: 100svh;
+  }
+  .section:not(#landing) {
     height: auto;
     min-height: 100svh;
     scroll-snap-align: start;
