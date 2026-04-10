@@ -208,29 +208,31 @@ async function openDeliveredEdit(id) {
 
 document.getElementById('deliveredForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const id = document.getElementById('d-id').value;
-  const thumbUrl = await uploadFile(document.getElementById('d-thumb'));
-  const payload = {
-    title: document.getElementById('d-title').value,
-    type: document.getElementById('d-type').value,
-    description: document.getElementById('d-desc').value,
-    link: document.getElementById('d-link').value,
-    order: document.getElementById('d-order').value,
-    ...(thumbUrl && { thumbnail: thumbUrl })
-  };
-
-  let res;
-  if (id) {
-    res = await api('PUT', `/delivered/${id}`, payload);
-  } else {
+  const btn = e.target.querySelector('button[type="submit"]');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Uploading...';
+  btn.disabled = true;
+  try {
+    const id = document.getElementById('d-id').value;
     const fd = new FormData();
-    Object.entries(payload).forEach(([k,v]) => fd.append(k,v));
+    fd.append('title', document.getElementById('d-title').value);
+    fd.append('type', document.getElementById('d-type').value);
+    fd.append('description', document.getElementById('d-desc').value);
+    fd.append('link', document.getElementById('d-link').value);
+    fd.append('order', document.getElementById('d-order').value);
     const fileInput = document.getElementById('d-thumb');
     if (fileInput.files[0]) fd.append('thumbnail', fileInput.files[0]);
-    res = await fetch('/api/delivered', { method:'POST', headers:{Authorization:`Bearer ${token}`}, body: fd }).then(r=>r.json());
+    const url = id ? `/api/delivered/${id}` : '/api/delivered';
+    const method = id ? 'PUT' : 'POST';
+    const res = await fetch(url, { method, headers:{Authorization:`Bearer ${token}`}, body: fd }).then(r=>r.json());
+    showMsg('deliveredMsg', res?._id ? 'Saved!' : res?.message || 'Error saving', !!res?._id);
+    if (res?._id) { loadDeliveredList(); document.getElementById('deliveredDrawer').classList.add('hidden'); }
+  } catch (err) {
+    showMsg('deliveredMsg', 'Network error: ' + err.message, false);
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
   }
-  showMsg('deliveredMsg', res?._id ? 'Saved!' : res?.message || 'Error', !!res?._id);
-  if (res?._id) { loadDeliveredList(); document.getElementById('deliveredDrawer').classList.add('hidden'); }
 });
 
 /* ── Sample Sites ───────────────────────────────────────────────────────────── */
@@ -282,21 +284,31 @@ async function openSampleEdit(id) {
 
 document.getElementById('samplesForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const id = document.getElementById('s-id').value;
-  const fd = new FormData();
-  fd.append('name', document.getElementById('s-name').value);
-  fd.append('url', document.getElementById('s-url').value);
-  fd.append('description', document.getElementById('s-desc').value);
-  fd.append('tags', document.getElementById('s-tags').value);
-  fd.append('order', document.getElementById('s-order').value);
-  const fileInput = document.getElementById('s-preview');
-  if (fileInput.files[0]) fd.append('preview', fileInput.files[0]);
-
-  const url = id ? `/api/samples/${id}` : '/api/samples';
-  const method = id ? 'PUT' : 'POST';
-  const res = await fetch(url, { method, headers:{Authorization:`Bearer ${token}`}, body: fd }).then(r=>r.json());
-  showMsg('samplesMsg', res?._id ? 'Saved!' : res?.message || 'Error', !!res?._id);
-  if (res?._id) { loadSamplesList(); document.getElementById('samplesDrawer').classList.add('hidden'); }
+  const btn = e.target.querySelector('button[type="submit"]');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Uploading...';
+  btn.disabled = true;
+  try {
+    const id = document.getElementById('s-id').value;
+    const fd = new FormData();
+    fd.append('name', document.getElementById('s-name').value);
+    fd.append('url', document.getElementById('s-url').value);
+    fd.append('description', document.getElementById('s-desc').value);
+    fd.append('tags', document.getElementById('s-tags').value);
+    fd.append('order', document.getElementById('s-order').value);
+    const fileInput = document.getElementById('s-preview');
+    if (fileInput.files[0]) fd.append('preview', fileInput.files[0]);
+    const url = id ? `/api/samples/${id}` : '/api/samples';
+    const method = id ? 'PUT' : 'POST';
+    const res = await fetch(url, { method, headers:{Authorization:`Bearer ${token}`}, body: fd }).then(r=>r.json());
+    showMsg('samplesMsg', res?._id ? 'Saved!' : res?.message || 'Error saving', !!res?._id);
+    if (res?._id) { loadSamplesList(); document.getElementById('samplesDrawer').classList.add('hidden'); }
+  } catch (err) {
+    showMsg('samplesMsg', 'Network error: ' + err.message, false);
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
 });
 
 /* ── Clients ────────────────────────────────────────────────────────────────── */
@@ -346,19 +358,29 @@ async function openClientEdit(id) {
 
 document.getElementById('clientsForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const id = document.getElementById('c-id').value;
-  const fd = new FormData();
-  fd.append('name', document.getElementById('c-name').value);
-  fd.append('instagramHandle', document.getElementById('c-handle').value);
-  fd.append('order', document.getElementById('c-order').value);
-  const fileInput = document.getElementById('c-screen');
-  if (fileInput.files[0]) fd.append('screenshot', fileInput.files[0]);
-
-  const url = id ? `/api/clients/${id}` : '/api/clients';
-  const method = id ? 'PUT' : 'POST';
-  const res = await fetch(url, { method, headers:{Authorization:`Bearer ${token}`}, body: fd }).then(r=>r.json());
-  showMsg('clientsMsg', res?._id ? 'Saved!' : res?.message || 'Error', !!res?._id);
-  if (res?._id) { loadClientsList(); document.getElementById('clientsDrawer').classList.add('hidden'); }
+  const btn = e.target.querySelector('button[type="submit"]');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Uploading...';
+  btn.disabled = true;
+  try {
+    const id = document.getElementById('c-id').value;
+    const fd = new FormData();
+    fd.append('name', document.getElementById('c-name').value);
+    fd.append('instagramHandle', document.getElementById('c-handle').value);
+    fd.append('order', document.getElementById('c-order').value);
+    const fileInput = document.getElementById('c-screen');
+    if (fileInput.files[0]) fd.append('screenshot', fileInput.files[0]);
+    const url = id ? `/api/clients/${id}` : '/api/clients';
+    const method = id ? 'PUT' : 'POST';
+    const res = await fetch(url, { method, headers:{Authorization:`Bearer ${token}`}, body: fd }).then(r=>r.json());
+    showMsg('clientsMsg', res?._id ? 'Saved!' : res?.message || 'Error saving', !!res?._id);
+    if (res?._id) { loadClientsList(); document.getElementById('clientsDrawer').classList.add('hidden'); }
+  } catch (err) {
+    showMsg('clientsMsg', 'Network error: ' + err.message, false);
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
 });
 
 /* ── Contact ────────────────────────────────────────────────────────────────── */
@@ -422,7 +444,7 @@ function showMsg(id, msg, success) {
   if (!el) return;
   el.textContent = msg;
   el.className = 'save-msg ' + (success ? 'success' : 'error');
-  setTimeout(() => { el.textContent = ''; el.className = 'save-msg'; }, 3000);
+  setTimeout(() => { el.textContent = ''; el.className = 'save-msg'; }, 5000);
 }
 
 /* ── Init ───────────────────────────────────────────────────────────────────── */

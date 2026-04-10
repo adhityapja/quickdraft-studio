@@ -75,21 +75,33 @@ document.querySelectorAll('.nav-links a, .landing-cta a').forEach(a => {
   });
 });
 
-// IntersectionObserver → active dot + reveal animations
+// IntersectionObserver → active dot tracking only
 const observer = new IntersectionObserver(entries => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
       const id = entry.target.dataset.section;
       dots.forEach(d => d.classList.toggle('active', d.dataset.target === id));
-      // reveal children
-      entry.target.querySelectorAll('.reveal').forEach((el, i) => {
-        setTimeout(() => el.classList.add('visible'), i * 120);
-      });
     }
   });
 }, { threshold: 0.4, root: container });
 
 sections.forEach(s => observer.observe(s));
+
+// Separate observer for .reveal elements — triggers as soon as element enters viewport
+// This fixes mobile where the section header can be above-viewport when section loads
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      revealObserver.unobserve(entry.target); // stop watching once visible
+    }
+  });
+}, { threshold: 0.1, root: container });
+
+// Observe all current .reveal elements + re-observe after content loads
+function observeRevealEls() {
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+}
 
 // ── Load Content from API ────────────────────────────────────────────────────
 async function loadAll() {
@@ -106,6 +118,8 @@ async function loadAll() {
     renderSamples(samples);
     renderClients(clients);
     renderContact(contact);
+    // Re-observe after dynamic content is injected
+    observeRevealEls();
   } catch (err) {
     console.warn('API not reachable, showing defaults:', err.message);
   }
@@ -295,4 +309,5 @@ navLinks?.querySelectorAll('a').forEach(link => {
   });
 });
 
+observeRevealEls(); // observe static .reveal elements on page load
 loadAll();
