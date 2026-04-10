@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('cloudinary').v2;
 const protect = require('../middleware/auth');
 
 const SiteSettings = require('../models/SiteSettings');
@@ -11,31 +11,32 @@ const DeliveredContent = require('../models/DeliveredContent');
 const SampleSite = require('../models/SampleSite');
 const Admin = require('../models/Admin');
 
-// ── Multer Setup ────────────────────────────────────────────────────────────
-const uploadsDir = path.join(__dirname, '../public/uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+// ── Cloudinary Config ────────────────────────────────────────────────────────
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, unique + path.extname(file.originalname));
-  }
+// ── Multer + Cloudinary Storage ──────────────────────────────────────────────
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'quickdraft-studio',
+    allowed_formats: ['jpeg', 'jpg', 'png', 'webp', 'gif'],
+    transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+  },
 });
 
 const upload = multer({
   storage,
   limits: { fileSize: 15 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (/\.(jpeg|jpg|png|webp|gif)$/i.test(file.originalname)) cb(null, true);
-    else cb(new Error('Only image files are allowed'));
-  }
 });
 
 // ── File Upload ──────────────────────────────────────────────────────────────
 router.post('/upload', protect, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-  res.json({ url: `/uploads/${req.file.filename}` });
+  res.json({ url: req.file.path });
 });
 
 // ── Site Settings (about / contact / landing) ────────────────────────────────
@@ -67,7 +68,7 @@ router.get('/clients', async (req, res) => {
 router.post('/clients', protect, upload.single('screenshot'), async (req, res) => {
   try {
     const data = { ...req.body };
-    if (req.file) data.screenshot = `/uploads/${req.file.filename}`;
+    if (req.file) data.screenshot = req.file.path;
     res.status(201).json(await Client.create(data));
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
@@ -75,7 +76,7 @@ router.post('/clients', protect, upload.single('screenshot'), async (req, res) =
 router.put('/clients/:id', protect, upload.single('screenshot'), async (req, res) => {
   try {
     const data = { ...req.body };
-    if (req.file) data.screenshot = `/uploads/${req.file.filename}`;
+    if (req.file) data.screenshot = req.file.path;
     const client = await Client.findByIdAndUpdate(req.params.id, data, { new: true });
     if (!client) return res.status(404).json({ message: 'Not found' });
     res.json(client);
@@ -99,7 +100,7 @@ router.get('/delivered', async (req, res) => {
 router.post('/delivered', protect, upload.single('thumbnail'), async (req, res) => {
   try {
     const data = { ...req.body };
-    if (req.file) data.thumbnail = `/uploads/${req.file.filename}`;
+    if (req.file) data.thumbnail = req.file.path;
     res.status(201).json(await DeliveredContent.create(data));
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
@@ -107,7 +108,7 @@ router.post('/delivered', protect, upload.single('thumbnail'), async (req, res) 
 router.put('/delivered/:id', protect, upload.single('thumbnail'), async (req, res) => {
   try {
     const data = { ...req.body };
-    if (req.file) data.thumbnail = `/uploads/${req.file.filename}`;
+    if (req.file) data.thumbnail = req.file.path;
     const item = await DeliveredContent.findByIdAndUpdate(req.params.id, data, { new: true });
     if (!item) return res.status(404).json({ message: 'Not found' });
     res.json(item);
@@ -133,7 +134,7 @@ router.post('/samples', protect, upload.single('preview'), async (req, res) => {
     const data = { ...req.body };
     if (req.body.tags && typeof req.body.tags === 'string')
       data.tags = req.body.tags.split(',').map(t => t.trim()).filter(Boolean);
-    if (req.file) data.preview = `/uploads/${req.file.filename}`;
+    if (req.file) data.preview = req.file.path;
     res.status(201).json(await SampleSite.create(data));
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
@@ -143,7 +144,7 @@ router.put('/samples/:id', protect, upload.single('preview'), async (req, res) =
     const data = { ...req.body };
     if (req.body.tags && typeof req.body.tags === 'string')
       data.tags = req.body.tags.split(',').map(t => t.trim()).filter(Boolean);
-    if (req.file) data.preview = `/uploads/${req.file.filename}`;
+    if (req.file) data.preview = req.file.path;
     const item = await SampleSite.findByIdAndUpdate(req.params.id, data, { new: true });
     if (!item) return res.status(404).json({ message: 'Not found' });
     res.json(item);
