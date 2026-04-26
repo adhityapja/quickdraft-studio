@@ -105,7 +105,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', 
 .panel-header h3 { font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 600; color: var(--muted); }
 
 /* ── OVERVIEW ───────────────────────────────────────────────────────────────── */
-.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 28px; }
+.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 28px; }
 .ov-card {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 24px; text-align: center;

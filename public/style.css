@@ -92,6 +92,16 @@ body {
   bottom: -100px; right: -100px; width: 380px; height: 380px; border-radius: 50%;
   background: radial-gradient(circle, rgba(255,179,71,0.10) 0%, transparent 65%);
 }
+#reels::before {
+  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  top: -120px; right: -150px; width: 560px; height: 560px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(123,91,219,0.16) 0%, transparent 65%);
+}
+#reels::after {
+  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  bottom: -100px; left: -100px; width: 380px; height: 380px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(64,156,255,0.12) 0%, transparent 65%);
+}
 #contact::before {
   content: ''; position: absolute; z-index: 0; pointer-events: none;
   top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -109,7 +119,7 @@ body {
 .section-darker::before {
   box-shadow: none; /* don't let the rule above interfere */
 }
-#about, #delivered, #samples, #clients {
+#about, #delivered, #samples, #clients, #reels {
   border-top: 1px solid rgba(255,255,255,0.05);
 }
 
@@ -421,10 +431,10 @@ body {
 /* ─── CLIENTS GRID ──────────────────────────────────────────────────────────── */
 .clients-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
   overflow-y: auto;
-  max-height: calc(100vh - 260px);
+  max-height: calc(100vh - 320px);
   padding-right: 8px;
 }
 .client-card {
@@ -433,7 +443,8 @@ body {
   border-radius: var(--radius);
   overflow: hidden;
   transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
-  cursor: pointer;
+  text-decoration: none; color: var(--text);
+  display: flex; flex-direction: column;
 }
 .client-card:hover {
   transform: translateY(-6px) scale(1.01);
@@ -441,7 +452,7 @@ body {
   box-shadow: 0 12px 40px rgba(255,75,145,0.12);
 }
 .client-screenshot {
-  width: 100%; aspect-ratio: 9/14;
+  width: 100%; aspect-ratio: 16/9;
   background: linear-gradient(160deg, #1a0a2e, #0d0d1f);
   overflow: hidden; position: relative;
   display: flex; align-items: center; justify-content: center;
@@ -473,6 +484,85 @@ body {
   display: inline-block; width: 8px; height: 8px; border-radius: 50%;
   background: linear-gradient(135deg, #f09433, #cc2366);
 }
+.client-video-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--accent); text-decoration: none; font-size: 0.82rem;
+  font-weight: 600; padding: 6px 16px;
+  border-top: 1px solid var(--glass-border);
+  transition: gap var(--transition), background var(--transition);
+  background: rgba(255,255,255,0.01);
+}
+.client-video-link:hover { gap: 10px; background: rgba(123,91,219,0.08); }
+
+/* ─── SHOW MORE BUTTON ─────────────────────────────────────────────────────── */
+.show-more-wrap {
+  text-align: center; margin-top: 20px;
+}
+.show-more-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 32px; border-radius: 50px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--text); font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; letter-spacing: 0.5px;
+  backdrop-filter: blur(10px);
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+.show-more-btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 4px 24px rgba(123,91,219,0.3);
+}
+
+/* ─── DEMO REELS GRID ──────────────────────────────────────────────────────── */
+.reels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  overflow-y: auto;
+  max-height: calc(100vh - 260px);
+  padding-right: 8px;
+}
+.reel-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+  text-decoration: none; color: var(--text);
+}
+.reel-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(123,91,219,0.4);
+  box-shadow: 0 12px 40px rgba(123,91,219,0.15);
+}
+.reel-thumb {
+  width: 100%; aspect-ratio: 16/9;
+  background: linear-gradient(135deg, #1a1a3e, #2d1b6e);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.5rem; position: relative; overflow: hidden;
+}
+.reel-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.reel-play-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.35);
+  opacity: 0; transition: opacity var(--transition);
+}
+.reel-card:hover .reel-play-overlay { opacity: 1; }
+.reel-play-icon {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: rgba(123,91,219,0.9);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; color: #fff;
+  box-shadow: 0 4px 20px rgba(123,91,219,0.5);
+  transition: transform var(--transition);
+}
+.reel-card:hover .reel-play-icon { transform: scale(1.1); }
+.reel-body { padding: 18px; display: flex; flex-direction: column; gap: 6px; }
+.reel-title { font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 700; }
+.reel-desc { color: var(--muted); font-size: 0.85rem; line-height: 1.6; }
 
 /* ─── CONTACT ───────────────────────────────────────────────────────────────── */
 .contact-layout {
@@ -635,7 +725,8 @@ body {
   /* Cards / grids */
   .cards-grid { grid-template-columns: 1fr; max-height: none; }
   .sites-grid  { grid-template-columns: 1fr; max-height: none; }
-  .clients-grid { grid-template-columns: repeat(2, 1fr); max-height: none; }
+  .clients-grid { grid-template-columns: 1fr; max-height: none; }
+  .reels-grid { grid-template-columns: 1fr; max-height: none; }
 
   /* Contact — full width on mobile */
   .contact-layout {
@@ -672,6 +763,7 @@ body {
 @media (max-width: 480px) {
   .section-inner { padding: 76px 4% 48px; }
   .clients-grid { grid-template-columns: 1fr; }
+  .reels-grid { grid-template-columns: 1fr; }
   .service-tag { font-size: 0.78rem; padding: 6px 14px; }
   .btn-primary { padding: 12px 24px; font-size: 0.88rem; }
   .section-title { font-size: clamp(1.6rem, 7vw, 2.4rem); }

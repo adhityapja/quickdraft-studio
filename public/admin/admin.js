@@ -73,7 +73,8 @@ document.getElementById('logoutBtn').addEventListener('click', logout);
 const panelTitles = {
   overview: 'Overview', about: 'About Section',
   delivered: 'Delivered Contents', samples: 'Sample Sites',
-  clients: 'Our Clients', contact: 'Contact Info', password: 'Change Password'
+  clients: 'Our Clients', reels: 'Demo Reels',
+  contact: 'Contact Info', password: 'Change Password'
 };
 
 function switchPanel(name) {
@@ -88,7 +89,8 @@ function switchPanel(name) {
   const loaders = {
     overview: loadOverview, about: loadAbout,
     delivered: loadDeliveredList, samples: loadSamplesList,
-    clients: loadClientsList, contact: loadContact
+    clients: loadClientsList, reels: loadReelsList,
+    contact: loadContact
   };
   loaders[name]?.();
 }
@@ -99,12 +101,13 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 
 /* ── Overview ──────────────────────────────────────────────────────────────── */
 async function loadOverview() {
-  const [clients, delivered, samples] = await Promise.all([
-    api('GET', '/clients'), api('GET', '/delivered'), api('GET', '/samples')
+  const [clients, delivered, samples, reels] = await Promise.all([
+    api('GET', '/clients'), api('GET', '/delivered'), api('GET', '/samples'), api('GET', '/demoreels')
   ]);
   document.getElementById('ov-clients').textContent = clients?.length ?? '—';
   document.getElementById('ov-delivered').textContent = delivered?.length ?? '—';
   document.getElementById('ov-samples').textContent = samples?.length ?? '—';
+  document.getElementById('ov-reels').textContent = reels?.length ?? '—';
 }
 
 /* ── About ─────────────────────────────────────────────────────────────────── */
@@ -325,7 +328,7 @@ async function loadClientsList() {
       </div>
       <div class="list-info">
         <div class="list-name">${item.name}</div>
-        <div class="list-sub">${item.instagramHandle}</div>
+        <div class="list-sub">${item.instagramHandle}${item.videoLink ? ' · 🎥 Video' : ''}</div>
       </div>
       <div class="list-actions">
         <button class="btn-icon" onclick="openClientEdit('${item._id}')">Edit</button>
@@ -343,6 +346,7 @@ function openClientDrawer(data = null) {
   document.getElementById('c-id').value = data?._id || '';
   document.getElementById('c-name').value = data?.name || '';
   document.getElementById('c-handle').value = data?.instagramHandle || '';
+  document.getElementById('c-video').value = data?.videoLink || '';
   document.getElementById('c-order').value = data?.order ?? 0;
   document.getElementById('c-screen-preview').innerHTML = data?.screenshot
     ? `<img src="${data.screenshot}" alt="screenshot"/>` : '';
@@ -367,6 +371,7 @@ document.getElementById('clientsForm').addEventListener('submit', async e => {
     const fd = new FormData();
     fd.append('name', document.getElementById('c-name').value);
     fd.append('instagramHandle', document.getElementById('c-handle').value);
+    fd.append('videoLink', document.getElementById('c-video').value);
     fd.append('order', document.getElementById('c-order').value);
     const fileInput = document.getElementById('c-screen');
     if (fileInput.files[0]) fd.append('screenshot', fileInput.files[0]);
@@ -383,11 +388,86 @@ document.getElementById('clientsForm').addEventListener('submit', async e => {
   }
 });
 
+/* ── Demo Reels ─────────────────────────────────────────────────────────────── */
+async function loadReelsList() {
+  const items = await api('GET', '/demoreels');
+  const list = document.getElementById('reelsList');
+  if (!items || !items.length) {
+    list.innerHTML = '<div class="empty-list">No demo reels yet. Click "+ Add New" to get started.</div>'; return;
+  }
+  list.innerHTML = items.map(item => `
+    <div class="list-item">
+      <div class="list-thumb">
+        ${item.thumbnail ? `<img src="${item.thumbnail}" alt="${item.title}"/>` : '🎬'}
+      </div>
+      <div class="list-info">
+        <div class="list-name">${item.title}</div>
+        <div class="list-sub">${item.videoUrl ? item.videoUrl.slice(0,50) + '...' : ''}</div>
+      </div>
+      <div class="list-actions">
+        <button class="btn-icon" onclick="openReelEdit('${item._id}')">Edit</button>
+        <button class="btn-icon del" onclick="confirmDel('${item._id}','demoreels','${item.title.replace(/'/g,"\\'")}')">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('addReelBtn').addEventListener('click', () => openReelDrawer());
+document.getElementById('closeReels').addEventListener('click', () => document.getElementById('reelsDrawer').classList.add('hidden'));
+
+function openReelDrawer(data = null) {
+  const drawer = document.getElementById('reelsDrawer');
+  document.getElementById('reelsDrawerTitle').textContent = data ? 'Edit Demo Reel' : 'Add Demo Reel';
+  document.getElementById('r-id').value = data?._id || '';
+  document.getElementById('r-title').value = data?.title || '';
+  document.getElementById('r-videourl').value = data?.videoUrl || '';
+  document.getElementById('r-desc').value = data?.description || '';
+  document.getElementById('r-order').value = data?.order ?? 0;
+  document.getElementById('r-thumb-preview').innerHTML = data?.thumbnail
+    ? `<img src="${data.thumbnail}" alt="thumb"/>` : '';
+  drawer.classList.remove('hidden');
+  previewImage(document.getElementById('r-thumb'), document.getElementById('r-thumb-preview'));
+}
+
+async function openReelEdit(id) {
+  const items = await api('GET', '/demoreels');
+  const item = items?.find(i => i._id === id);
+  if (item) openReelDrawer(item);
+}
+
+document.getElementById('reelsForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Uploading...';
+  btn.disabled = true;
+  try {
+    const id = document.getElementById('r-id').value;
+    const fd = new FormData();
+    fd.append('title', document.getElementById('r-title').value);
+    fd.append('videoUrl', document.getElementById('r-videourl').value);
+    fd.append('description', document.getElementById('r-desc').value);
+    fd.append('order', document.getElementById('r-order').value);
+    const fileInput = document.getElementById('r-thumb');
+    if (fileInput.files[0]) fd.append('thumbnail', fileInput.files[0]);
+    const url = id ? `/api/demoreels/${id}` : '/api/demoreels';
+    const method = id ? 'PUT' : 'POST';
+    const res = await fetch(url, { method, headers:{Authorization:`Bearer ${token}`}, body: fd }).then(r=>r.json());
+    showMsg('reelsMsg', res?._id ? 'Saved!' : res?.message || 'Error saving', !!res?._id);
+    if (res?._id) { loadReelsList(); document.getElementById('reelsDrawer').classList.add('hidden'); }
+  } catch (err) {
+    showMsg('reelsMsg', 'Network error: ' + err.message, false);
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
+});
+
 /* ── Contact ────────────────────────────────────────────────────────────────── */
 async function loadContact() {
   const data = await api('GET', '/settings/contact');
   if (!data) return;
   document.getElementById('ct-phone').value = data.phone || '';
+  document.getElementById('ct-altphone').value = data.altPhone || '';
   document.getElementById('ct-email').value = data.email || '';
   document.getElementById('ct-insta').value = data.instagram || '';
   document.getElementById('ct-whatsapp').value = data.whatsapp || '';
@@ -398,6 +478,7 @@ document.getElementById('contactForm').addEventListener('submit', async e => {
   e.preventDefault();
   const res = await api('PUT', '/settings/contact', {
     phone: document.getElementById('ct-phone').value,
+    altPhone: document.getElementById('ct-altphone').value,
     email: document.getElementById('ct-email').value,
     instagram: document.getElementById('ct-insta').value,
     whatsapp: document.getElementById('ct-whatsapp').value,
@@ -429,7 +510,7 @@ function confirmDel(id, type, name) {
   deleteCallback = async () => {
     await api('DELETE', `/${type}/${id}`);
     document.getElementById('confirmModal').classList.add('hidden');
-    const loaders = { clients: loadClientsList, delivered: loadDeliveredList, samples: loadSamplesList };
+    const loaders = { clients: loadClientsList, delivered: loadDeliveredList, samples: loadSamplesList, demoreels: loadReelsList };
     loaders[type]?.();
   };
 }

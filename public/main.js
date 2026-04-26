@@ -106,17 +106,19 @@ function observeRevealEls() {
 // ── Load Content from API ────────────────────────────────────────────────────
 async function loadAll() {
   try {
-    const [about, delivered, samples, clients, contact] = await Promise.all([
+    const [about, delivered, samples, clients, reels, contact] = await Promise.all([
       fetch('/api/settings/about').then(r => r.json()),
       fetch('/api/delivered').then(r => r.json()),
       fetch('/api/samples').then(r => r.json()),
       fetch('/api/clients').then(r => r.json()),
+      fetch('/api/demoreels').then(r => r.json()),
       fetch('/api/settings/contact').then(r => r.json()),
     ]);
     renderAbout(about);
     renderDelivered(delivered);
     renderSamples(samples);
     renderClients(clients);
+    renderReels(reels);
     renderContact(contact);
     // Re-observe after dynamic content is injected
     observeRevealEls();
@@ -199,17 +201,41 @@ function renderSamples(items) {
 }
 
 // ── Clients ──────────────────────────────────────────────────────────────────
+let allClients = [];
+let clientsExpanded = false;
+
 function renderClients(items) {
   const grid = document.getElementById('clientsGrid');
+  const showMoreWrap = document.getElementById('showMoreWrap');
+  const showMoreBtn = document.getElementById('showMoreClients');
   if (!grid) return;
+
+  allClients = items;
+  clientsExpanded = false;
+
   if (!items.length) {
     grid.innerHTML = '<div class="empty-state">Our clients list is being updated.</div>';
+    if (showMoreWrap) showMoreWrap.style.display = 'none';
     return;
   }
-  grid.innerHTML = items.map(client => {
+
+  // Show first 4 initially
+  renderClientCards(grid, items.slice(0, 4));
+
+  // Show/hide "Show More" button
+  if (items.length > 4 && showMoreWrap) {
+    showMoreWrap.style.display = '';
+    showMoreBtn.textContent = `Show More (${items.length - 4} more)`;
+  } else if (showMoreWrap) {
+    showMoreWrap.style.display = 'none';
+  }
+}
+
+function renderClientCards(grid, clients) {
+  grid.innerHTML = clients.map(client => {
     const igUrl = `https://instagram.com/${client.instagramHandle.replace('@', '')}`;
     return `
-      <a class="client-card" href="${igUrl}" target="_blank" rel="noopener">
+      <div class="client-card">
         <div class="client-screenshot">
           ${client.screenshot
             ? `<img src="${client.screenshot}" alt="${client.name}" loading="lazy"/>`
@@ -222,8 +248,53 @@ function renderClients(items) {
           <div class="client-name">${client.name}</div>
           <div class="client-handle">${client.instagramHandle}</div>
         </div>
-      </a>`;
+        ${client.videoLink
+          ? `<a class="client-video-link" href="${client.videoLink}" target="_blank" rel="noopener">▶ Watch Video ↗</a>`
+          : ''}
+      </div>`;
   }).join('');
+}
+
+// Show More / Show Less toggle
+document.getElementById('showMoreClients')?.addEventListener('click', () => {
+  const grid = document.getElementById('clientsGrid');
+  const btn = document.getElementById('showMoreClients');
+  if (!grid) return;
+
+  clientsExpanded = !clientsExpanded;
+
+  if (clientsExpanded) {
+    renderClientCards(grid, allClients);
+    btn.textContent = 'Show Less';
+  } else {
+    renderClientCards(grid, allClients.slice(0, 4));
+    btn.textContent = `Show More (${allClients.length - 4} more)`;
+  }
+});
+
+// ── Demo Reels ───────────────────────────────────────────────────────────────
+function renderReels(items) {
+  const grid = document.getElementById('reelsGrid');
+  if (!grid) return;
+  if (!items.length) {
+    grid.innerHTML = '<div class="empty-state">Demo reels coming soon!</div>';
+    return;
+  }
+  grid.innerHTML = items.map(item => `
+    <a class="reel-card" href="${item.videoUrl}" target="_blank" rel="noopener">
+      <div class="reel-thumb">
+        ${item.thumbnail
+          ? `<img src="${item.thumbnail}" alt="${item.title}" loading="lazy"/>`
+          : `<span>🎬</span>`}
+        <div class="reel-play-overlay">
+          <div class="reel-play-icon">▶</div>
+        </div>
+      </div>
+      <div class="reel-body">
+        <div class="reel-title">${item.title}</div>
+        ${item.description ? `<div class="reel-desc">${item.description}</div>` : ''}
+      </div>
+    </a>`).join('');
 }
 
 // ── Contact ──────────────────────────────────────────────────────────────────
@@ -233,9 +304,10 @@ function renderContact(data) {
 
   const items = [
     data.phone && { icon: '📞', label: 'Phone', val: data.phone, href: `tel:${data.phone}` },
+    data.altPhone && { icon: '📱', label: 'Alt. Phone', val: data.altPhone, href: `tel:${data.altPhone}` },
     data.email && { icon: '✉️', label: 'Email', val: data.email, href: `mailto:${data.email}` },
     data.instagram && { icon: '📸', label: 'Instagram', val: data.instagram, href: `https://instagram.com/${data.instagram.replace('@','')}` },
-    data.whatsapp && { icon: '💬', label: 'WhatsApp', val: data.whatsapp, href: `https://wa.me/${data.whatsapp.replace(/\D/g,'')}` },
+    data.whatsapp && { icon: '💬', label: 'WhatsApp', val: data.whatsapp, href: `https://wa.me/${data.whatsapp.replace(/\\D/g,'')}` },
   ].filter(Boolean);
 
   cards.innerHTML = items.map(item => `

@@ -51,14 +51,17 @@
       <button class="nav-item" data-panel="about" id="nb-about">
         <span class="nav-icon">ℹ️</span><span>About</span>
       </button>
+      <button class="nav-item" data-panel="clients" id="nb-clients">
+        <span class="nav-icon">👥</span><span>Our Clients</span>
+      </button>
+      <button class="nav-item" data-panel="reels" id="nb-reels">
+        <span class="nav-icon">🎬</span><span>Demo Reels</span>
+      </button>
       <button class="nav-item" data-panel="delivered" id="nb-delivered">
         <span class="nav-icon">📦</span><span>Delivered Contents</span>
       </button>
       <button class="nav-item" data-panel="samples" id="nb-samples">
         <span class="nav-icon">🌐</span><span>Sample Sites</span>
-      </button>
-      <button class="nav-item" data-panel="clients" id="nb-clients">
-        <span class="nav-icon">👥</span><span>Our Clients</span>
       </button>
       <button class="nav-item" data-panel="contact" id="nb-contact">
         <span class="nav-icon">📞</span><span>Contact Info</span>
@@ -83,6 +86,7 @@
         <div class="ov-card"><div class="ov-num" id="ov-clients">—</div><div class="ov-label">Clients</div></div>
         <div class="ov-card"><div class="ov-num" id="ov-delivered">—</div><div class="ov-label">Delivered</div></div>
         <div class="ov-card"><div class="ov-num" id="ov-samples">—</div><div class="ov-label">Sample Sites</div></div>
+        <div class="ov-card"><div class="ov-num" id="ov-reels">—</div><div class="ov-label">Demo Reels</div></div>
       </div>
       <div class="welcome-msg">
         <h2>Welcome back 👋</h2>
@@ -112,6 +116,60 @@
           <span class="save-msg" id="aboutMsg"></span>
         </div>
       </form>
+    </div>
+
+    <!-- ── CLIENTS ───────────────────────────── -->
+    <div class="panel hidden" id="panel-clients">
+      <div class="panel-header">
+        <h2>Our Clients</h2>
+        <button class="btn-primary btn-sm" id="addClientBtn">+ Add New</button>
+      </div>
+      <div id="clientsList" class="item-list"></div>
+      <div class="drawer hidden" id="clientsDrawer">
+        <div class="drawer-header">
+          <h3 id="clientsDrawerTitle">Add Client</h3>
+          <button class="close-drawer" id="closeClients">✕</button>
+        </div>
+        <form id="clientsForm">
+          <input type="hidden" id="c-id"/>
+          <div class="field"><label>Client Name</label><input type="text" id="c-name" required/></div>
+          <div class="field"><label>Instagram Handle</label><input type="text" id="c-handle" placeholder="@clientname" required/></div>
+          <div class="field"><label>Video Link (optional)</label><input type="url" id="c-video" placeholder="https://youtube.com/..."/></div>
+          <div class="field"><label>Screenshot (IG Page)</label><input type="file" id="c-screen" accept="image/*"/><div class="img-preview" id="c-screen-preview"></div></div>
+          <div class="field"><label>Order</label><input type="number" id="c-order" value="0" min="0"/></div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Save</button>
+            <span class="save-msg" id="clientsMsg"></span>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── DEMO REELS ────────────────────────── -->
+    <div class="panel hidden" id="panel-reels">
+      <div class="panel-header">
+        <h2>Demo Reels</h2>
+        <button class="btn-primary btn-sm" id="addReelBtn">+ Add New</button>
+      </div>
+      <div id="reelsList" class="item-list"></div>
+      <div class="drawer hidden" id="reelsDrawer">
+        <div class="drawer-header">
+          <h3 id="reelsDrawerTitle">Add Demo Reel</h3>
+          <button class="close-drawer" id="closeReels">✕</button>
+        </div>
+        <form id="reelsForm">
+          <input type="hidden" id="r-id"/>
+          <div class="field"><label>Title</label><input type="text" id="r-title" required/></div>
+          <div class="field"><label>Video URL</label><input type="url" id="r-videourl" placeholder="https://youtube.com/..." required/></div>
+          <div class="field"><label>Description</label><textarea id="r-desc" rows="3"></textarea></div>
+          <div class="field"><label>Thumbnail Image</label><input type="file" id="r-thumb" accept="image/*"/><div class="img-preview" id="r-thumb-preview"></div></div>
+          <div class="field"><label>Order</label><input type="number" id="r-order" value="0" min="0"/></div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Save</button>
+            <span class="save-msg" id="reelsMsg"></span>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- ── DELIVERED CONTENTS ─────────────────── -->
@@ -176,37 +234,12 @@
       </div>
     </div>
 
-    <!-- ── CLIENTS ───────────────────────────── -->
-    <div class="panel hidden" id="panel-clients">
-      <div class="panel-header">
-        <h2>Our Clients</h2>
-        <button class="btn-primary btn-sm" id="addClientBtn">+ Add New</button>
-      </div>
-      <div id="clientsList" class="item-list"></div>
-      <div class="drawer hidden" id="clientsDrawer">
-        <div class="drawer-header">
-          <h3 id="clientsDrawerTitle">Add Client</h3>
-          <button class="close-drawer" id="closeClients">✕</button>
-        </div>
-        <form id="clientsForm">
-          <input type="hidden" id="c-id"/>
-          <div class="field"><label>Client Name</label><input type="text" id="c-name" required/></div>
-          <div class="field"><label>Instagram Handle</label><input type="text" id="c-handle" placeholder="@clientname" required/></div>
-          <div class="field"><label>Screenshot (IG Page)</label><input type="file" id="c-screen" accept="image/*"/><div class="img-preview" id="c-screen-preview"></div></div>
-          <div class="field"><label>Order</label><input type="number" id="c-order" value="0" min="0"/></div>
-          <div class="form-actions">
-            <button type="submit" class="btn-primary">Save</button>
-            <span class="save-msg" id="clientsMsg"></span>
-          </div>
-        </form>
-      </div>
-    </div>
-
     <!-- ── CONTACT ───────────────────────────── -->
     <div class="panel hidden" id="panel-contact">
       <div class="panel-header"><h2>Contact Information</h2></div>
       <form id="contactForm" class="settings-form">
         <div class="field"><label>Phone Number</label><input type="text" id="ct-phone" placeholder="+91 9876543210"/></div>
+        <div class="field"><label>Alternative Phone Number</label><input type="text" id="ct-altphone" placeholder="+91 9876543210"/></div>
         <div class="field"><label>Email Address</label><input type="email" id="ct-email" placeholder="hello@quickdraft.studio"/></div>
         <div class="field"><label>Instagram Handle</label><input type="text" id="ct-insta" placeholder="@quickdraft.studio"/></div>
         <div class="field"><label>WhatsApp Number</label><input type="text" id="ct-whatsapp" placeholder="+91 9876543210"/></div>

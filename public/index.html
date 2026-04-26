@@ -19,9 +19,9 @@
     </div>
     <div class="nav-links" id="navLinks">
       <a href="#about" data-section="about">About</a>
-      <a href="#delivered" data-section="delivered">Work</a>
-      <a href="#samples" data-section="samples">Sites</a>
       <a href="#clients" data-section="clients">Clients</a>
+      <a href="#reels" data-section="reels">Reels</a>
+      <a href="#samples" data-section="samples">Sites</a>
       <a href="#contact" data-section="contact">Contact</a>
     </div>
     <button class="hamburger" id="hamburger" aria-label="Toggle menu">
@@ -56,7 +56,7 @@
         <div class="about-grid">
           <div class="about-left reveal">
             <span class="section-label">Who We Are</span>
-            <h2 class="section-title">Crafting Stories<br />Through <span class="gradient-text">Digital Art</span></h2>
+            <h2 class="section-title">Crafting Stories<br /><span class="gradient-text">Through Digital Art</span></h2>
             <p class="about-description" id="aboutDescription">
               QuickDraft Studio is a creative agency specializing in web development, video editing, social media content, and digital branding.
             </p>
@@ -91,35 +91,7 @@
       </div>
     </section>
 
-    <!-- SECTION 3: DELIVERED CONTENTS -->
-    <section class="section section-darker" id="delivered" data-section="delivered">
-      <div class="section-inner">
-        <div class="section-header reveal">
-          <span class="section-label">Our Work</span>
-          <h2 class="section-title">Delivered <span class="gradient-text">Contents</span></h2>
-          <p class="section-subtitle">A look at what we've created for our clients</p>
-        </div>
-        <div class="cards-grid" id="deliveredGrid">
-          <!-- cards injected by JS -->
-        </div>
-      </div>
-    </section>
-
-    <!-- SECTION 4: SAMPLE SITES -->
-    <section class="section section-dark" id="samples" data-section="samples">
-      <div class="section-inner">
-        <div class="section-header reveal">
-          <span class="section-label">Get a look at our</span>
-          <h2 class="section-title">Sample <span class="gradient-text">Sites</span></h2>
-          <p class="section-subtitle">Websites we've designed and built</p>
-        </div>
-        <div class="sites-grid" id="samplesGrid">
-          <!-- cards injected by JS -->
-        </div>
-      </div>
-    </section>
-
-    <!-- SECTION 5: OUR CLIENTS -->
+    <!-- SECTION 3: OUR CLIENTS -->
     <section class="section section-darker" id="clients" data-section="clients">
       <div class="section-inner">
         <div class="section-header reveal">
@@ -128,6 +100,37 @@
           <p class="section-subtitle">Brands we've had the pleasure of working with</p>
         </div>
         <div class="clients-grid" id="clientsGrid">
+          <!-- cards injected by JS -->
+        </div>
+        <div class="show-more-wrap" id="showMoreWrap" style="display:none;">
+          <button class="show-more-btn" id="showMoreClients">Show More</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: DEMO REELS -->
+    <section class="section section-dark" id="reels" data-section="reels">
+      <div class="section-inner">
+        <div class="section-header reveal">
+          <span class="section-label">Showreel</span>
+          <h2 class="section-title">Demo <span class="gradient-text">Reels</span></h2>
+          <p class="section-subtitle">A glimpse of our creative work in motion</p>
+        </div>
+        <div class="reels-grid" id="reelsGrid">
+          <!-- cards injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: SAMPLE SITES -->
+    <section class="section section-darker" id="samples" data-section="samples">
+      <div class="section-inner">
+        <div class="section-header reveal">
+          <span class="section-label">Get a look at our</span>
+          <h2 class="section-title">Sample <span class="gradient-text">Sites</span></h2>
+          <p class="section-subtitle">Websites we've designed and built</p>
+        </div>
+        <div class="sites-grid" id="samplesGrid">
           <!-- cards injected by JS -->
         </div>
       </div>
@@ -158,9 +161,9 @@
   <div class="nav-dots" id="navDots">
     <button class="dot active" data-target="landing" title="Home"></button>
     <button class="dot" data-target="about" title="About"></button>
-    <button class="dot" data-target="delivered" title="Delivered Contents"></button>
-    <button class="dot" data-target="samples" title="Sample Sites"></button>
     <button class="dot" data-target="clients" title="Our Clients"></button>
+    <button class="dot" data-target="reels" title="Demo Reels"></button>
+    <button class="dot" data-target="samples" title="Sample Sites"></button>
     <button class="dot" data-target="contact" title="Contact"></button>
   </div>
 

@@ -4,6 +4,7 @@ const clientSchema = new mongoose.Schema({
   name: { type: String, required: true },
   instagramHandle: { type: String, required: true },
   screenshot: { type: String, default: '' },
+  videoLink: { type: String, default: '' },
   order: { type: Number, default: 0 }
 }, { timestamps: true });
 

@@ -9,6 +9,7 @@ const SiteSettings = require('../models/SiteSettings');
 const Client = require('../models/Client');
 const DeliveredContent = require('../models/DeliveredContent');
 const SampleSite = require('../models/SampleSite');
+const DemoReel = require('../models/DemoReel');
 const Admin = require('../models/Admin');
 
 // ── Cloudinary Config ────────────────────────────────────────────────────────
@@ -154,6 +155,38 @@ router.put('/samples/:id', protect, upload.single('preview'), async (req, res) =
 router.delete('/samples/:id', protect, async (req, res) => {
   try {
     await SampleSite.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Deleted' });
+  } catch { res.status(500).json({ message: 'Server error' }); }
+});
+
+// ── Demo Reels ────────────────────────────────────────────────────────────────
+router.get('/demoreels', async (req, res) => {
+  try {
+    res.json(await DemoReel.find().sort({ order: 1, createdAt: -1 }));
+  } catch { res.status(500).json({ message: 'Server error' }); }
+});
+
+router.post('/demoreels', protect, upload.single('thumbnail'), async (req, res) => {
+  try {
+    const data = { ...req.body };
+    if (req.file) data.thumbnail = req.file.path;
+    res.status(201).json(await DemoReel.create(data));
+  } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+router.put('/demoreels/:id', protect, upload.single('thumbnail'), async (req, res) => {
+  try {
+    const data = { ...req.body };
+    if (req.file) data.thumbnail = req.file.path;
+    const item = await DemoReel.findByIdAndUpdate(req.params.id, data, { new: true });
+    if (!item) return res.status(404).json({ message: 'Not found' });
+    res.json(item);
+  } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+router.delete('/demoreels/:id', protect, async (req, res) => {
+  try {
+    await DemoReel.findByIdAndDelete(req.params.id);
     res.json({ message: 'Deleted' });
   } catch { res.status(500).json({ message: 'Server error' }); }
 });
