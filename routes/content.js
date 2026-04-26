@@ -62,7 +62,7 @@ router.put('/settings/:key', protect, async (req, res) => {
 // ── Clients ──────────────────────────────────────────────────────────────────
 router.get('/clients', async (req, res) => {
   try {
-    res.json(await Client.find().sort({ order: 1, createdAt: -1 }));
+    res.json(await Client.find().sort({ order: 1, createdAt: 1 }));
   } catch { res.status(500).json({ message: 'Server error' }); }
 });
 
@@ -70,8 +70,18 @@ router.post('/clients', protect, upload.single('screenshot'), async (req, res) =
   try {
     const data = { ...req.body };
     if (req.file) data.screenshot = req.file.path;
+    const maxDoc = await Client.findOne().sort({ order: -1 });
+    data.order = (maxDoc?.order ?? -1) + 1;
     res.status(201).json(await Client.create(data));
   } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+router.put('/clients/reorder', protect, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    await Promise.all(ids.map((id, i) => Client.findByIdAndUpdate(id, { order: i })));
+    res.json({ message: 'Reordered' });
+  } catch { res.status(500).json({ message: 'Server error' }); }
 });
 
 router.put('/clients/:id', protect, upload.single('screenshot'), async (req, res) => {
@@ -94,7 +104,7 @@ router.delete('/clients/:id', protect, async (req, res) => {
 // ── Delivered Content ─────────────────────────────────────────────────────────
 router.get('/delivered', async (req, res) => {
   try {
-    res.json(await DeliveredContent.find().sort({ order: 1, createdAt: -1 }));
+    res.json(await DeliveredContent.find().sort({ order: 1, createdAt: 1 }));
   } catch { res.status(500).json({ message: 'Server error' }); }
 });
 
@@ -102,8 +112,18 @@ router.post('/delivered', protect, upload.single('thumbnail'), async (req, res) 
   try {
     const data = { ...req.body };
     if (req.file) data.thumbnail = req.file.path;
+    const maxDoc = await DeliveredContent.findOne().sort({ order: -1 });
+    data.order = (maxDoc?.order ?? -1) + 1;
     res.status(201).json(await DeliveredContent.create(data));
   } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+router.put('/delivered/reorder', protect, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    await Promise.all(ids.map((id, i) => DeliveredContent.findByIdAndUpdate(id, { order: i })));
+    res.json({ message: 'Reordered' });
+  } catch { res.status(500).json({ message: 'Server error' }); }
 });
 
 router.put('/delivered/:id', protect, upload.single('thumbnail'), async (req, res) => {
@@ -126,7 +146,7 @@ router.delete('/delivered/:id', protect, async (req, res) => {
 // ── Sample Sites ──────────────────────────────────────────────────────────────
 router.get('/samples', async (req, res) => {
   try {
-    res.json(await SampleSite.find().sort({ order: 1, createdAt: -1 }));
+    res.json(await SampleSite.find().sort({ order: 1, createdAt: 1 }));
   } catch { res.status(500).json({ message: 'Server error' }); }
 });
 
@@ -136,8 +156,18 @@ router.post('/samples', protect, upload.single('preview'), async (req, res) => {
     if (req.body.tags && typeof req.body.tags === 'string')
       data.tags = req.body.tags.split(',').map(t => t.trim()).filter(Boolean);
     if (req.file) data.preview = req.file.path;
+    const maxDoc = await SampleSite.findOne().sort({ order: -1 });
+    data.order = (maxDoc?.order ?? -1) + 1;
     res.status(201).json(await SampleSite.create(data));
   } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+router.put('/samples/reorder', protect, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    await Promise.all(ids.map((id, i) => SampleSite.findByIdAndUpdate(id, { order: i })));
+    res.json({ message: 'Reordered' });
+  } catch { res.status(500).json({ message: 'Server error' }); }
 });
 
 router.put('/samples/:id', protect, upload.single('preview'), async (req, res) => {
@@ -162,7 +192,7 @@ router.delete('/samples/:id', protect, async (req, res) => {
 // ── Demo Reels ────────────────────────────────────────────────────────────────
 router.get('/demoreels', async (req, res) => {
   try {
-    res.json(await DemoReel.find().sort({ order: 1, createdAt: -1 }));
+    res.json(await DemoReel.find().sort({ order: 1, createdAt: 1 }));
   } catch { res.status(500).json({ message: 'Server error' }); }
 });
 
@@ -170,8 +200,18 @@ router.post('/demoreels', protect, upload.single('thumbnail'), async (req, res) 
   try {
     const data = { ...req.body };
     if (req.file) data.thumbnail = req.file.path;
+    const maxDoc = await DemoReel.findOne().sort({ order: -1 });
+    data.order = (maxDoc?.order ?? -1) + 1;
     res.status(201).json(await DemoReel.create(data));
   } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+router.put('/demoreels/reorder', protect, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    await Promise.all(ids.map((id, i) => DemoReel.findByIdAndUpdate(id, { order: i })));
+    res.json({ message: 'Reordered' });
+  } catch { res.status(500).json({ message: 'Server error' }); }
 });
 
 router.put('/demoreels/:id', protect, upload.single('thumbnail'), async (req, res) => {

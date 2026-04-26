@@ -174,9 +174,22 @@ body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', 
   display: flex; align-items: center; gap: 14px;
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 14px 18px;
-  transition: border-color var(--trans);
+  transition: border-color var(--trans), opacity var(--trans), transform var(--trans);
+  cursor: grab;
 }
+.list-item:active { cursor: grabbing; }
 .list-item:hover { border-color: rgba(123,91,219,0.3); }
+.list-item.dragging { opacity: 0.4; transform: scale(0.98); }
+.list-item.drag-over {
+  border-color: var(--accent);
+  box-shadow: 0 -2px 0 0 var(--accent);
+}
+.drag-handle {
+  display: flex; flex-direction: column; gap: 2px; cursor: grab;
+  padding: 4px 2px; flex-shrink: 0; color: var(--muted);
+  font-size: 0.7rem; letter-spacing: 2px; user-select: none;
+}
+.drag-handle::before { content: '⠿'; font-size: 1.2rem; }
 .list-thumb {
   width: 56px; height: 40px; border-radius: 6px; object-fit: cover;
   background: rgba(255,255,255,0.05); flex-shrink: 0;
@@ -189,6 +202,10 @@ body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', 
 .list-sub { color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
 .list-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .empty-list { text-align: center; color: var(--muted); padding: 40px; font-size: 0.9rem; }
+.reorder-hint {
+  font-size: 0.78rem; color: var(--muted); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
 
 /* ── DRAWER ─────────────────────────────────────────────────────────────────── */
 .drawer {
