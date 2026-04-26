@@ -89,7 +89,7 @@ function switchPanel(name) {
   const loaders = {
     overview: loadOverview, about: loadAbout,
     delivered: loadDeliveredList, samples: loadSamplesList,
-    clients: loadClientsList, reels: loadReelsList,
+    clients: loadClientsList, reels: loadReelsPanel,
     contact: loadContact
   };
   loaders[name]?.();
@@ -427,12 +427,64 @@ document.getElementById('clientsForm').addEventListener('submit', async e => {
   }
 });
 
-/* ── Demo Reels ─────────────────────────────────────────────────────────────── */
+/* ── Demo Reels (Categories + Reels) ────────────────────────────────────────── */
+async function loadReelsPanel() {
+  await loadCatsList();
+  await loadReelsList();
+}
+
+// -- Categories --
+async function loadCatsList() {
+  const items = await api('GET', '/reelcategories');
+  const list = document.getElementById('catsList');
+  if (!items || !items.length) {
+    list.innerHTML = '<div class="empty-list">No categories yet. Add one first.</div>'; return;
+  }
+  list.innerHTML = '<div class="reorder-hint">↕ Drag to reorder</div>' + items.map(item => `
+    <div class="list-item" data-id="${item._id}">
+      <div class="drag-handle"></div>
+      <div class="list-info" style="flex:1">
+        <div class="list-name">📁 ${item.name}</div>
+      </div>
+      <div class="list-actions">
+        <button class="btn-icon" onclick="openCatEdit('${item._id}')">Edit</button>
+        <button class="btn-icon del" onclick="confirmDel('${item._id}','reelcategories','${item.name.replace(/'/g,"\\'")}')">Delete</button>
+      </div>
+    </div>`).join('');
+  enableDragSort(list, '/reelcategories/reorder');
+}
+
+document.getElementById('addCatBtn').addEventListener('click', () => openCatDrawer());
+document.getElementById('closeCat').addEventListener('click', () => document.getElementById('catDrawer').classList.add('hidden'));
+
+function openCatDrawer(data = null) {
+  document.getElementById('catDrawerTitle').textContent = data ? 'Edit Category' : 'Add Category';
+  document.getElementById('cat-id').value = data?._id || '';
+  document.getElementById('cat-name').value = data?.name || '';
+  document.getElementById('catDrawer').classList.remove('hidden');
+}
+
+async function openCatEdit(id) {
+  const items = await api('GET', '/reelcategories');
+  const item = items?.find(i => i._id === id);
+  if (item) openCatDrawer(item);
+}
+
+document.getElementById('catForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const id = document.getElementById('cat-id').value;
+  const body = { name: document.getElementById('cat-name').value };
+  const res = id ? await api('PUT', `/reelcategories/${id}`, body) : await api('POST', '/reelcategories', body);
+  showMsg('catMsg', res?._id ? 'Saved!' : res?.message || 'Error', !!res?._id);
+  if (res?._id) { loadCatsList(); loadReelsList(); document.getElementById('catDrawer').classList.add('hidden'); }
+});
+
+// -- Reels --
 async function loadReelsList() {
   const items = await api('GET', '/demoreels');
   const list = document.getElementById('reelsList');
   if (!items || !items.length) {
-    list.innerHTML = '<div class="empty-list">No demo reels yet. Click "+ Add New" to get started.</div>'; return;
+    list.innerHTML = '<div class="empty-list">No demo reels yet. Click "+ Add Reel" to get started.</div>'; return;
   }
   list.innerHTML = '<div class="reorder-hint">↕ Drag items to reorder</div>' + items.map(item => `
     <div class="list-item" data-id="${item._id}">
@@ -442,7 +494,7 @@ async function loadReelsList() {
       </div>
       <div class="list-info">
         <div class="list-name">${item.title}</div>
-        <div class="list-sub">${item.videoUrl ? item.videoUrl.slice(0,50) + '...' : ''}</div>
+        <div class="list-sub">${item.category?.name || 'Uncategorized'} · ${item.videoUrl ? item.videoUrl.slice(0,40) + '...' : ''}</div>
       </div>
       <div class="list-actions">
         <button class="btn-icon" onclick="openReelEdit('${item._id}')">Edit</button>
@@ -455,7 +507,14 @@ async function loadReelsList() {
 document.getElementById('addReelBtn').addEventListener('click', () => openReelDrawer());
 document.getElementById('closeReels').addEventListener('click', () => document.getElementById('reelsDrawer').classList.add('hidden'));
 
-function openReelDrawer(data = null) {
+async function populateCategorySelect(selectedId = '') {
+  const cats = await api('GET', '/reelcategories');
+  const sel = document.getElementById('r-category');
+  sel.innerHTML = '<option value="">Select category...</option>' +
+    (cats || []).map(c => `<option value="${c._id}"${c._id === selectedId ? ' selected' : ''}>${c.name}</option>`).join('');
+}
+
+async function openReelDrawer(data = null) {
   const drawer = document.getElementById('reelsDrawer');
   document.getElementById('reelsDrawerTitle').textContent = data ? 'Edit Demo Reel' : 'Add Demo Reel';
   document.getElementById('r-id').value = data?._id || '';
@@ -464,6 +523,7 @@ function openReelDrawer(data = null) {
   document.getElementById('r-desc').value = data?.description || '';
   document.getElementById('r-thumb-preview').innerHTML = data?.thumbnail
     ? `<img src="${data.thumbnail}" alt="thumb"/>` : '';
+  await populateCategorySelect(data?.category?._id || data?.category || '');
   drawer.classList.remove('hidden');
   previewImage(document.getElementById('r-thumb'), document.getElementById('r-thumb-preview'));
 }
@@ -483,6 +543,7 @@ document.getElementById('reelsForm').addEventListener('submit', async e => {
   try {
     const id = document.getElementById('r-id').value;
     const fd = new FormData();
+    fd.append('category', document.getElementById('r-category').value);
     fd.append('title', document.getElementById('r-title').value);
     fd.append('videoUrl', document.getElementById('r-videourl').value);
     fd.append('description', document.getElementById('r-desc').value);
@@ -549,7 +610,7 @@ function confirmDel(id, type, name) {
   deleteCallback = async () => {
     await api('DELETE', `/${type}/${id}`);
     document.getElementById('confirmModal').classList.add('hidden');
-    const loaders = { clients: loadClientsList, delivered: loadDeliveredList, samples: loadSamplesList, demoreels: loadReelsList };
+    const loaders = { clients: loadClientsList, delivered: loadDeliveredList, samples: loadSamplesList, demoreels: loadReelsList, reelcategories: loadReelsPanel };
     loaders[type]?.();
   };
 }

@@ -111,7 +111,7 @@ async function loadAll() {
       fetch('/api/delivered').then(r => r.json()),
       fetch('/api/samples').then(r => r.json()),
       fetch('/api/clients').then(r => r.json()),
-      fetch('/api/demoreels').then(r => r.json()),
+      fetch('/api/demoreels/grouped').then(r => r.json()),
       fetch('/api/settings/contact').then(r => r.json()),
     ]);
     renderAbout(about);
@@ -265,36 +265,62 @@ document.getElementById('showMoreClients')?.addEventListener('click', () => {
 
   if (clientsExpanded) {
     renderClientCards(grid, allClients);
+    grid.style.maxHeight = 'none';
     btn.textContent = 'Show Less';
   } else {
     renderClientCards(grid, allClients.slice(0, 4));
+    grid.style.maxHeight = '';
     btn.textContent = `Show More (${allClients.length - 4} more)`;
   }
 });
 
-// ── Demo Reels ───────────────────────────────────────────────────────────────
-function renderReels(items) {
-  const grid = document.getElementById('reelsGrid');
-  if (!grid) return;
-  if (!items.length) {
-    grid.innerHTML = '<div class="empty-state">Demo reels coming soon!</div>';
+// ── Demo Reels (grouped by category) ───────────────────────────────────────
+function renderReels(groups) {
+  const container = document.getElementById('reelsGrid');
+  if (!container) return;
+  if (!groups.length || groups.every(g => !g.reels.length)) {
+    container.innerHTML = '<div class="empty-state">Demo reels coming soon!</div>';
     return;
   }
-  grid.innerHTML = items.map(item => `
-    <a class="reel-card" href="${item.videoUrl}" target="_blank" rel="noopener">
-      <div class="reel-thumb">
-        ${item.thumbnail
-          ? `<img src="${item.thumbnail}" alt="${item.title}" loading="lazy"/>`
-          : `<span>🎬</span>`}
-        <div class="reel-play-overlay">
-          <div class="reel-play-icon">▶</div>
+
+  const tabsHtml = groups.map((g, i) =>
+    `<button class="reel-tab${i === 0 ? ' active' : ''}" data-cat="${g._id}">${g.name}</button>`
+  ).join('');
+
+  const panelsHtml = groups.map((g, i) => {
+    const cards = g.reels.map(item => `
+      <a class="reel-card" href="${item.videoUrl}" target="_blank" rel="noopener">
+        <div class="reel-thumb">
+          ${item.thumbnail
+            ? `<img src="${item.thumbnail}" alt="${item.title}" loading="lazy"/>`
+            : `<span>🎬</span>`}
+          <div class="reel-play-overlay">
+            <div class="reel-play-icon">▶</div>
+          </div>
         </div>
-      </div>
-      <div class="reel-body">
-        <div class="reel-title">${item.title}</div>
-        ${item.description ? `<div class="reel-desc">${item.description}</div>` : ''}
-      </div>
-    </a>`).join('');
+        <div class="reel-body">
+          <div class="reel-title">${item.title}</div>
+          ${item.description ? `<div class="reel-desc">${item.description}</div>` : ''}
+        </div>
+      </a>`).join('');
+
+    return `<div class="reel-panel${i === 0 ? ' active' : ''}" data-cat="${g._id}">
+      ${cards || '<div class="empty-state">No reels in this category yet.</div>'}
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="reel-tabs">${tabsHtml}</div>
+    <div class="reel-panels">${panelsHtml}</div>`;
+
+  container.querySelectorAll('.reel-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      container.querySelectorAll('.reel-tab').forEach(t => t.classList.remove('active'));
+      container.querySelectorAll('.reel-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      container.querySelector(`.reel-panel[data-cat="${tab.dataset.cat}"]`)?.classList.add('active');
+    });
+  });
 }
 
 // ── Contact ──────────────────────────────────────────────────────────────────

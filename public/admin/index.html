@@ -146,9 +146,33 @@
 
     <!-- ── DEMO REELS ────────────────────────── -->
     <div class="panel hidden" id="panel-reels">
+      <!-- Categories sub-section -->
+      <div class="panel-header">
+        <h2>Reel Categories</h2>
+        <button class="btn-primary btn-sm" id="addCatBtn">+ Add Category</button>
+      </div>
+      <div id="catsList" class="item-list"></div>
+      <div class="drawer hidden" id="catDrawer">
+        <div class="drawer-header">
+          <h3 id="catDrawerTitle">Add Category</h3>
+          <button class="close-drawer" id="closeCat">✕</button>
+        </div>
+        <form id="catForm">
+          <input type="hidden" id="cat-id"/>
+          <div class="field"><label>Category Name</label><input type="text" id="cat-name" required/></div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Save</button>
+            <span class="save-msg" id="catMsg"></span>
+          </div>
+        </form>
+      </div>
+
+      <hr style="border-color: rgba(255,255,255,0.06); margin: 24px 0;"/>
+
+      <!-- Reels sub-section -->
       <div class="panel-header">
         <h2>Demo Reels</h2>
-        <button class="btn-primary btn-sm" id="addReelBtn">+ Add New</button>
+        <button class="btn-primary btn-sm" id="addReelBtn">+ Add Reel</button>
       </div>
       <div id="reelsList" class="item-list"></div>
       <div class="drawer hidden" id="reelsDrawer">
@@ -158,6 +182,7 @@
         </div>
         <form id="reelsForm">
           <input type="hidden" id="r-id"/>
+          <div class="field"><label>Category</label><select id="r-category" required></select></div>
           <div class="field"><label>Title</label><input type="text" id="r-title" required/></div>
           <div class="field"><label>Video URL</label><input type="url" id="r-videourl" placeholder="https://youtube.com/..." required/></div>
           <div class="field"><label>Description</label><textarea id="r-desc" rows="3"></textarea></div>

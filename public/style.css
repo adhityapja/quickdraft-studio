@@ -517,9 +517,8 @@ body {
 
 /* ─── DEMO REELS GRID ──────────────────────────────────────────────────────── */
 .reels-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   max-height: calc(100vh - 260px);
   padding-right: 8px;
@@ -563,6 +562,32 @@ body {
 .reel-body { padding: 18px; display: flex; flex-direction: column; gap: 6px; }
 .reel-title { font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 700; }
 .reel-desc { color: var(--muted); font-size: 0.85rem; line-height: 1.6; }
+
+/* ─── REEL CATEGORY TABS ───────────────────────────────────────────────────── */
+.reel-tabs {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px;
+}
+.reel-tab {
+  padding: 10px 24px; border-radius: 50px;
+  background: var(--glass); border: 1px solid var(--glass-border);
+  color: var(--muted); font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.88rem; font-weight: 600;
+  cursor: pointer; transition: all 0.25s ease;
+  backdrop-filter: blur(8px);
+}
+.reel-tab:hover { border-color: rgba(123,91,219,0.4); color: var(--text); }
+.reel-tab.active {
+  background: linear-gradient(135deg, rgba(123,91,219,0.3), rgba(80,40,200,0.2));
+  border-color: var(--accent); color: #fff;
+  box-shadow: 0 2px 16px rgba(123,91,219,0.25);
+}
+.reel-panels { width: 100%; }
+.reel-panel { display: none; }
+.reel-panel.active {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
 
 /* ─── CONTACT ───────────────────────────────────────────────────────────────── */
 .contact-layout {

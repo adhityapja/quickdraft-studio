@@ -10,6 +10,7 @@ const Client = require('../models/Client');
 const DeliveredContent = require('../models/DeliveredContent');
 const SampleSite = require('../models/SampleSite');
 const DemoReel = require('../models/DemoReel');
+const ReelCategory = require('../models/ReelCategory');
 const Admin = require('../models/Admin');
 
 // ── Cloudinary Config ────────────────────────────────────────────────────────
@@ -190,9 +191,64 @@ router.delete('/samples/:id', protect, async (req, res) => {
 });
 
 // ── Demo Reels ────────────────────────────────────────────────────────────────
+
+// Reel Categories
+router.get('/reelcategories', async (req, res) => {
+  try {
+    res.json(await ReelCategory.find().sort({ order: 1, createdAt: 1 }));
+  } catch { res.status(500).json({ message: 'Server error' }); }
+});
+
+router.post('/reelcategories', protect, async (req, res) => {
+  try {
+    const maxDoc = await ReelCategory.findOne().sort({ order: -1 });
+    const data = { ...req.body, order: (maxDoc?.order ?? -1) + 1 };
+    res.status(201).json(await ReelCategory.create(data));
+  } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+router.put('/reelcategories/reorder', protect, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    await Promise.all(ids.map((id, i) => ReelCategory.findByIdAndUpdate(id, { order: i })));
+    res.json({ message: 'Reordered' });
+  } catch { res.status(500).json({ message: 'Server error' }); }
+});
+
+router.put('/reelcategories/:id', protect, async (req, res) => {
+  try {
+    const item = await ReelCategory.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!item) return res.status(404).json({ message: 'Not found' });
+    res.json(item);
+  } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+router.delete('/reelcategories/:id', protect, async (req, res) => {
+  try {
+    await ReelCategory.findByIdAndDelete(req.params.id);
+    await DemoReel.deleteMany({ category: req.params.id });
+    res.json({ message: 'Deleted' });
+  } catch { res.status(500).json({ message: 'Server error' }); }
+});
+
+// Reels
 router.get('/demoreels', async (req, res) => {
   try {
-    res.json(await DemoReel.find().sort({ order: 1, createdAt: 1 }));
+    res.json(await DemoReel.find().populate('category').sort({ order: 1, createdAt: 1 }));
+  } catch { res.status(500).json({ message: 'Server error' }); }
+});
+
+// Grouped by category (for frontend)
+router.get('/demoreels/grouped', async (req, res) => {
+  try {
+    const cats = await ReelCategory.find().sort({ order: 1, createdAt: 1 });
+    const reels = await DemoReel.find().sort({ order: 1, createdAt: 1 });
+    const grouped = cats.map(cat => ({
+      _id: cat._id,
+      name: cat.name,
+      reels: reels.filter(r => r.category?.toString() === cat._id.toString())
+    }));
+    res.json(grouped);
   } catch { res.status(500).json({ message: 'Server error' }); }
 });
 
