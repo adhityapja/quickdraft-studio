@@ -142,6 +142,45 @@ document.getElementById('aboutForm').addEventListener('submit', async e => {
   showMsg('aboutMsg', res ? 'Saved!' : 'Error saving', !!res);
 });
 
+/* ── Drag & Drop Reorder ─────────────────────────────────────────────── */
+function enableDragSort(listEl, apiPath) {
+  let dragItem = null;
+  const items = listEl.querySelectorAll('.list-item');
+  items.forEach(item => {
+    item.setAttribute('draggable', 'true');
+    item.addEventListener('dragstart', e => {
+      dragItem = item;
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      listEl.querySelectorAll('.list-item').forEach(i => i.classList.remove('drag-over'));
+      dragItem = null;
+      // Save new order
+      const ids = Array.from(listEl.querySelectorAll('.list-item')).map(i => i.dataset.id);
+      api('PUT', apiPath, { ids });
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (item !== dragItem) item.classList.add('drag-over');
+    });
+    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      item.classList.remove('drag-over');
+      if (dragItem && dragItem !== item) {
+        const all = Array.from(listEl.querySelectorAll('.list-item'));
+        const from = all.indexOf(dragItem);
+        const to = all.indexOf(item);
+        if (from < to) item.after(dragItem);
+        else item.before(dragItem);
+      }
+    });
+  });
+}
+
 /* ── File Upload Helper ────────────────────────────────────────────────────── */
 async function uploadFile(fileInput) {
   if (!fileInput.files[0]) return null;
@@ -169,8 +208,9 @@ async function loadDeliveredList() {
     return;
   }
   const EMOJI = { Video:'🎬', Reel:'📱', Design:'🎨', Other:'✨' };
-  list.innerHTML = items.map(item => `
-    <div class="list-item">
+  list.innerHTML = '<div class="reorder-hint">↕ Drag items to reorder</div>' + items.map(item => `
+    <div class="list-item" data-id="${item._id}">
+      <div class="drag-handle"></div>
       <div class="list-thumb">
         ${item.thumbnail ? `<img src="${item.thumbnail}" alt="${item.title}"/>` : EMOJI[item.type]||'✨'}
       </div>
@@ -183,6 +223,7 @@ async function loadDeliveredList() {
         <button class="btn-icon del" onclick="confirmDel('${item._id}','delivered','${item.title.replace(/'/g,"\\'")}')">Delete</button>
       </div>
     </div>`).join('');
+  enableDragSort(list, '/delivered/reorder');
 }
 
 document.getElementById('addDeliveredBtn').addEventListener('click', () => openDeliveredDrawer());
@@ -196,7 +237,6 @@ function openDeliveredDrawer(data = null) {
   document.getElementById('d-type').value = data?.type || 'Video';
   document.getElementById('d-desc').value = data?.description || '';
   document.getElementById('d-link').value = data?.link || '';
-  document.getElementById('d-order').value = data?.order ?? 0;
   document.getElementById('d-thumb-preview').innerHTML = data?.thumbnail
     ? `<img src="${data.thumbnail}" alt="thumb"/>` : '';
   drawer.classList.remove('hidden');
@@ -222,7 +262,6 @@ document.getElementById('deliveredForm').addEventListener('submit', async e => {
     fd.append('type', document.getElementById('d-type').value);
     fd.append('description', document.getElementById('d-desc').value);
     fd.append('link', document.getElementById('d-link').value);
-    fd.append('order', document.getElementById('d-order').value);
     const fileInput = document.getElementById('d-thumb');
     if (fileInput.files[0]) fd.append('thumbnail', fileInput.files[0]);
     const url = id ? `/api/delivered/${id}` : '/api/delivered';
@@ -245,8 +284,9 @@ async function loadSamplesList() {
   if (!items || !items.length) {
     list.innerHTML = '<div class="empty-list">No sample sites yet.</div>'; return;
   }
-  list.innerHTML = items.map(item => `
-    <div class="list-item">
+  list.innerHTML = '<div class="reorder-hint">↕ Drag items to reorder</div>' + items.map(item => `
+    <div class="list-item" data-id="${item._id}">
+      <div class="drag-handle"></div>
       <div class="list-thumb">
         ${item.preview ? `<img src="${item.preview}" alt="${item.name}"/>` : '🌐'}
       </div>
@@ -259,6 +299,7 @@ async function loadSamplesList() {
         <button class="btn-icon del" onclick="confirmDel('${item._id}','samples','${item.name.replace(/'/g,"\\'")}')">Delete</button>
       </div>
     </div>`).join('');
+  enableDragSort(list, '/samples/reorder');
 }
 
 document.getElementById('addSampleBtn').addEventListener('click', () => openSampleDrawer());
@@ -272,7 +313,6 @@ function openSampleDrawer(data = null) {
   document.getElementById('s-url').value = data?.url || '';
   document.getElementById('s-desc').value = data?.description || '';
   document.getElementById('s-tags').value = data?.tags?.join(', ') || '';
-  document.getElementById('s-order').value = data?.order ?? 0;
   document.getElementById('s-preview-preview').innerHTML = data?.preview
     ? `<img src="${data.preview}" alt="preview"/>` : '';
   drawer.classList.remove('hidden');
@@ -298,7 +338,6 @@ document.getElementById('samplesForm').addEventListener('submit', async e => {
     fd.append('url', document.getElementById('s-url').value);
     fd.append('description', document.getElementById('s-desc').value);
     fd.append('tags', document.getElementById('s-tags').value);
-    fd.append('order', document.getElementById('s-order').value);
     const fileInput = document.getElementById('s-preview');
     if (fileInput.files[0]) fd.append('preview', fileInput.files[0]);
     const url = id ? `/api/samples/${id}` : '/api/samples';
@@ -321,8 +360,9 @@ async function loadClientsList() {
   if (!items || !items.length) {
     list.innerHTML = '<div class="empty-list">No clients yet.</div>'; return;
   }
-  list.innerHTML = items.map(item => `
-    <div class="list-item">
+  list.innerHTML = '<div class="reorder-hint">↕ Drag items to reorder</div>' + items.map(item => `
+    <div class="list-item" data-id="${item._id}">
+      <div class="drag-handle"></div>
       <div class="list-thumb">
         ${item.screenshot ? `<img src="${item.screenshot}" alt="${item.name}"/>` : '📷'}
       </div>
@@ -335,6 +375,7 @@ async function loadClientsList() {
         <button class="btn-icon del" onclick="confirmDel('${item._id}','clients','${item.name.replace(/'/g,"\\'")}')">Delete</button>
       </div>
     </div>`).join('');
+  enableDragSort(list, '/clients/reorder');
 }
 
 document.getElementById('addClientBtn').addEventListener('click', () => openClientDrawer());
@@ -347,7 +388,6 @@ function openClientDrawer(data = null) {
   document.getElementById('c-name').value = data?.name || '';
   document.getElementById('c-handle').value = data?.instagramHandle || '';
   document.getElementById('c-video').value = data?.videoLink || '';
-  document.getElementById('c-order').value = data?.order ?? 0;
   document.getElementById('c-screen-preview').innerHTML = data?.screenshot
     ? `<img src="${data.screenshot}" alt="screenshot"/>` : '';
   drawer.classList.remove('hidden');
@@ -372,7 +412,6 @@ document.getElementById('clientsForm').addEventListener('submit', async e => {
     fd.append('name', document.getElementById('c-name').value);
     fd.append('instagramHandle', document.getElementById('c-handle').value);
     fd.append('videoLink', document.getElementById('c-video').value);
-    fd.append('order', document.getElementById('c-order').value);
     const fileInput = document.getElementById('c-screen');
     if (fileInput.files[0]) fd.append('screenshot', fileInput.files[0]);
     const url = id ? `/api/clients/${id}` : '/api/clients';
@@ -395,8 +434,9 @@ async function loadReelsList() {
   if (!items || !items.length) {
     list.innerHTML = '<div class="empty-list">No demo reels yet. Click "+ Add New" to get started.</div>'; return;
   }
-  list.innerHTML = items.map(item => `
-    <div class="list-item">
+  list.innerHTML = '<div class="reorder-hint">↕ Drag items to reorder</div>' + items.map(item => `
+    <div class="list-item" data-id="${item._id}">
+      <div class="drag-handle"></div>
       <div class="list-thumb">
         ${item.thumbnail ? `<img src="${item.thumbnail}" alt="${item.title}"/>` : '🎬'}
       </div>
@@ -409,6 +449,7 @@ async function loadReelsList() {
         <button class="btn-icon del" onclick="confirmDel('${item._id}','demoreels','${item.title.replace(/'/g,"\\'")}')">Delete</button>
       </div>
     </div>`).join('');
+  enableDragSort(list, '/demoreels/reorder');
 }
 
 document.getElementById('addReelBtn').addEventListener('click', () => openReelDrawer());
@@ -421,7 +462,6 @@ function openReelDrawer(data = null) {
   document.getElementById('r-title').value = data?.title || '';
   document.getElementById('r-videourl').value = data?.videoUrl || '';
   document.getElementById('r-desc').value = data?.description || '';
-  document.getElementById('r-order').value = data?.order ?? 0;
   document.getElementById('r-thumb-preview').innerHTML = data?.thumbnail
     ? `<img src="${data.thumbnail}" alt="thumb"/>` : '';
   drawer.classList.remove('hidden');
@@ -446,7 +486,6 @@ document.getElementById('reelsForm').addEventListener('submit', async e => {
     fd.append('title', document.getElementById('r-title').value);
     fd.append('videoUrl', document.getElementById('r-videourl').value);
     fd.append('description', document.getElementById('r-desc').value);
-    fd.append('order', document.getElementById('r-order').value);
     const fileInput = document.getElementById('r-thumb');
     if (fileInput.files[0]) fd.append('thumbnail', fileInput.files[0]);
     const url = id ? `/api/demoreels/${id}` : '/api/demoreels';
