@@ -515,6 +515,30 @@ body {
   box-shadow: 0 4px 24px rgba(123,91,219,0.3);
 }
 
+/* ─── CLIENTS MORE NOTE ────────────────────────────────────────────────────── */
+.clients-more-note {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 28px;
+  padding: 0 4px;
+}
+.clients-more-divider {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+}
+.clients-more-text {
+  font-size: 0.78rem;
+  color: var(--muted);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-align: center;
+  opacity: 0.7;
+}
+
+
 /* ─── DEMO REELS GRID ──────────────────────────────────────────────────────── */
 .reels-grid {
   display: flex;
