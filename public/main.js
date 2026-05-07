@@ -261,6 +261,7 @@ document.getElementById('showMoreClients')?.addEventListener('click', () => {
   const btn = document.getElementById('showMoreClients');
   const section = document.getElementById('clients');
   const scrollCont = document.getElementById('scrollContainer');
+  const moreNote = document.getElementById('clientsMoreNote');
   if (!grid) return;
 
   clientsExpanded = !clientsExpanded;
@@ -272,6 +273,9 @@ document.getElementById('showMoreClients')?.addEventListener('click', () => {
     renderClientCards(grid, allClients);
     grid.style.maxHeight = 'none';
     btn.textContent = 'Show Less';
+
+    // Show the "more clients" note
+    if (moreNote) moreNote.style.display = '';
 
     // Allow section to grow beyond 100vh
     if (section) {
@@ -291,6 +295,9 @@ document.getElementById('showMoreClients')?.addEventListener('click', () => {
     renderClientCards(grid, allClients.slice(0, 4));
     grid.style.maxHeight = '';
     btn.textContent = `Show More (${allClients.length - 4} more)`;
+
+    // Hide the "more clients" note
+    if (moreNote) moreNote.style.display = 'none';
 
     // Restore section to fixed height
     if (section) {
