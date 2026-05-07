@@ -260,32 +260,57 @@ document.getElementById('showMoreClients')?.addEventListener('click', () => {
   const grid = document.getElementById('clientsGrid');
   const btn = document.getElementById('showMoreClients');
   const section = document.getElementById('clients');
+  const scrollCont = document.getElementById('scrollContainer');
   if (!grid) return;
 
   clientsExpanded = !clientsExpanded;
+
+  // Always disable scroll-snap first to prevent snap-jump on resize
+  if (scrollCont) scrollCont.style.scrollSnapType = 'none';
 
   if (clientsExpanded) {
     renderClientCards(grid, allClients);
     grid.style.maxHeight = 'none';
     btn.textContent = 'Show Less';
-    // Allow section to grow beyond 100vh so cards aren't compressed
+
+    // Allow section to grow beyond 100vh
     if (section) {
       section.style.height = 'auto';
       section.style.minHeight = '100vh';
       section.style.scrollSnapAlign = 'none';
     }
+
+    // Scroll back to top of clients section after layout reflows
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
   } else {
     renderClientCards(grid, allClients.slice(0, 4));
     grid.style.maxHeight = '';
     btn.textContent = `Show More (${allClients.length - 4} more)`;
-    // Restore fixed section height and scroll-snap
+
+    // Restore section to fixed height
     if (section) {
       section.style.height = '';
       section.style.minHeight = '';
       section.style.scrollSnapAlign = '';
     }
+
+    // Scroll back to clients, then re-enable snap after scroll settles
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => {
+          if (scrollCont) scrollCont.style.scrollSnapType = '';
+        }, 600);
+      });
+    });
   }
 });
+
 
 // ── Demo Reels (grouped by category) ───────────────────────────────────────
 function renderReels(groups) {
