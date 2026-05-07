@@ -259,6 +259,7 @@ function renderClientCards(grid, clients) {
 document.getElementById('showMoreClients')?.addEventListener('click', () => {
   const grid = document.getElementById('clientsGrid');
   const btn = document.getElementById('showMoreClients');
+  const section = document.getElementById('clients');
   if (!grid) return;
 
   clientsExpanded = !clientsExpanded;
@@ -267,10 +268,22 @@ document.getElementById('showMoreClients')?.addEventListener('click', () => {
     renderClientCards(grid, allClients);
     grid.style.maxHeight = 'none';
     btn.textContent = 'Show Less';
+    // Allow section to grow beyond 100vh so cards aren't compressed
+    if (section) {
+      section.style.height = 'auto';
+      section.style.minHeight = '100vh';
+      section.style.scrollSnapAlign = 'none';
+    }
   } else {
     renderClientCards(grid, allClients.slice(0, 4));
     grid.style.maxHeight = '';
     btn.textContent = `Show More (${allClients.length - 4} more)`;
+    // Restore fixed section height and scroll-snap
+    if (section) {
+      section.style.height = '';
+      section.style.minHeight = '';
+      section.style.scrollSnapAlign = '';
+    }
   }
 });
 
