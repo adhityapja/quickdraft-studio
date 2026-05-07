@@ -326,8 +326,10 @@ function renderReels(groups) {
   ).join('');
 
   const panelsHtml = groups.map((g, i) => {
-    const cards = g.reels.map(item => `
-      <a class="reel-card" href="${item.videoUrl}" target="_blank" rel="noopener">
+    const cards = g.reels.map(item => {
+      if (!item.videoUrl) console.warn('[Reel missing videoUrl]', item.title, item);
+      return `
+      <a class="reel-card" href="${item.videoUrl || '#'}" target="_blank" rel="noopener">
         <div class="reel-thumb">
           ${item.thumbnail
             ? `<img src="${item.thumbnail}" alt="${item.title}" loading="lazy"/>`
@@ -340,7 +342,9 @@ function renderReels(groups) {
           <div class="reel-title">${item.title}</div>
           ${item.description ? `<div class="reel-desc">${item.description}</div>` : ''}
         </div>
-      </a>`).join('');
+      </a>`;
+    }).join('');
+
 
     return `<div class="reel-panel${i === 0 ? ' active' : ''}" data-cat="${g._id}">
       ${cards || '<div class="empty-state">No reels in this category yet.</div>'}

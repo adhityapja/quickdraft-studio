@@ -242,7 +242,8 @@ router.get('/demoreels', async (req, res) => {
 router.get('/demoreels/grouped', async (req, res) => {
   try {
     const cats = await ReelCategory.find().sort({ order: 1, createdAt: 1 });
-    const reels = await DemoReel.find().sort({ order: 1, createdAt: 1 });
+    const reels = (await DemoReel.find().sort({ order: 1, createdAt: 1 }))
+      .map(r => r.toObject()); // convert to plain objects so all fields serialize correctly
     const grouped = cats.map(cat => ({
       _id: cat._id,
       name: cat.name,
