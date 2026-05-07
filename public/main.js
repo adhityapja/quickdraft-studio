@@ -316,20 +316,24 @@ document.getElementById('showMoreClients')?.addEventListener('click', () => {
 function renderReels(groups) {
   const container = document.getElementById('reelsGrid');
   if (!container) return;
-  if (!groups.length || groups.every(g => !g.reels.length)) {
+
+  // Filter to only groups that have reels
+  const activeGroups = groups.filter(g => g.reels && g.reels.length > 0);
+
+  if (!activeGroups.length) {
     container.innerHTML = '<div class="empty-state">Demo reels coming soon!</div>';
     return;
   }
 
-  const tabsHtml = groups.map((g, i) =>
-    `<button class="reel-tab${i === 0 ? ' active' : ''}" data-cat="${g._id}">${g.name}</button>`
+  const tabsHtml = activeGroups.map((g, i) =>
+    `<button class="reel-tab${i === 0 ? ' active' : ''}" data-index="${i}">${g.name}</button>`
   ).join('');
 
-  const panelsHtml = groups.map((g, i) => {
+  const panelsHtml = activeGroups.map((g, i) => {
     const cards = g.reels.map(item => {
       if (!item.videoUrl) console.warn('[Reel missing videoUrl]', item.title, item);
       return `
-      <a class="reel-card" href="${item.videoUrl || '#'}" target="_blank" rel="noopener">
+      <a class="reel-card" href="${item.videoUrl || '#'}" target="_blank" rel="noopener noreferrer">
         <div class="reel-thumb">
           ${item.thumbnail
             ? `<img src="${item.thumbnail}" alt="${item.title}" loading="lazy"/>`
@@ -345,9 +349,8 @@ function renderReels(groups) {
       </a>`;
     }).join('');
 
-
-    return `<div class="reel-panel${i === 0 ? ' active' : ''}" data-cat="${g._id}">
-      ${cards || '<div class="empty-state">No reels in this category yet.</div>'}
+    return `<div class="reel-panel${i === 0 ? ' active' : ''}" data-index="${i}">
+      ${cards}
     </div>`;
   }).join('');
 
@@ -355,15 +358,20 @@ function renderReels(groups) {
     <div class="reel-tabs">${tabsHtml}</div>
     <div class="reel-panels">${panelsHtml}</div>`;
 
-  container.querySelectorAll('.reel-tab').forEach(tab => {
+  // Use index-based switching — reliable regardless of ObjectId format
+  const tabs = container.querySelectorAll('.reel-tab');
+  const panels = container.querySelectorAll('.reel-panel');
+
+  tabs.forEach((tab, idx) => {
     tab.addEventListener('click', () => {
-      container.querySelectorAll('.reel-tab').forEach(t => t.classList.remove('active'));
-      container.querySelectorAll('.reel-panel').forEach(p => p.classList.remove('active'));
+      tabs.forEach(t => t.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
-      container.querySelector(`.reel-panel[data-cat="${tab.dataset.cat}"]`)?.classList.add('active');
+      panels[idx].classList.add('active');
     });
   });
 }
+
 
 // ── Contact ──────────────────────────────────────────────────────────────────
 function renderContact(data) {
