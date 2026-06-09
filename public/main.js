@@ -1,8 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 //  LIGHTFALL BACKGROUND  ─ exact recreation of reactbits.dev/backgrounds/lightfall
-//  Pure Canvas 2D, no external dependencies needed.
-//  Characteristic look: near-black void, dense white/silver cold-light streaks
-//  falling straight down with additive glow, subtle tilt, twinkle & mouse boost.
+//  Radial arcing diagonal streaks fanning out from a top-center vanishing point
+//  Deep navy-indigo to dark violet gradient with center blue-purple glow
 // ═══════════════════════════════════════════════════════════════════════════
 
 (function initLightfall() {
@@ -10,122 +9,141 @@
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  // ── Config ─ matches reactbits Lightfall defaults ────────────────────────
-  const STREAK_COUNT = 300;   // dense field like the original
-  const BG_COLOR     = '#120F17';  // exact Lightfall page background
-
-  // Lightfall uses mostly white/silver with very subtle hue tints
+  // ── Config ──────────────────────────────────────────────────────────────
+  const COUNT = 240; // dense visual field
+  
+  // ReactBits palette: white, pale lavender, light cold blue, and vibrant purples
   const COLORS = [
-    '#ffffff',    // pure white  (most common)
-    '#e8f0ff',    // cold blue-white
-    '#f0e8ff',    // very pale violet
-    '#d8eaff',    // sky blue-white
-    '#fff8f0',    // warm white
-    '#ffffff',    // pure white  (doubled weight)
-    '#ffffff',    // pure white  (tripled weight)
-    '#f4f0ff',    // ghost violet
+    '#ffffff', '#ffffff', '#ffffff', // white (dominant)
+    '#eef2ff', '#e0e7ff',           // cold blue-white
+    '#f5f0ff', '#e8dfff',           // pale lavender
+    '#c7b3ff', '#b49cff',           // light purple/violet
+    '#9b7fe8', '#805cee'            // vibrant violet
   ];
 
   let W, H;
+  let FX, FY; // focal point coords
   let mouse = { x: -9999, y: -9999 };
   let streaks = [];
   let rafId;
 
   // ── Streak ───────────────────────────────────────────────────────────────
   class Streak {
-    constructor(scatterY = false) { this.init(scatterY); }
+    constructor(scatter = false) {
+      this.reset(scatter);
+    }
 
-    init(scatterY = false) {
-      // Horizontal spread covers full canvas width plus overflow
-      this.x      = Math.random() * W;
-      // Start above viewport; scatter on first load
-      this.y      = scatterY ? (Math.random() * (H + 400) - 200) : -(20 + Math.random() * 500);
+    reset(scatter = false) {
+      // Angle: fan out downwards (roughly from 0.12 * PI to 0.88 * PI)
+      // This creates beautiful diagonal angles fanning left and right
+      this.theta = (0.12 + Math.random() * 0.76) * Math.PI;
 
-      // Length in pixels — longer streaks = more "fall" sense
-      this.len    = 60 + Math.random() * 320;
+      // Start radius (distance from focal point)
+      const maxR = Math.sqrt(W * W + H * H);
+      this.r = scatter ? Math.random() * maxR : 10 + Math.random() * 80;
 
-      // Width: thin hair lines (Lightfall is very fine)
-      this.w      = 0.3 + Math.random() * 1.8;
+      // Streak properties
+      this.len = 60 + Math.random() * 260;
+      this.w = 0.3 + Math.random() * 1.5; // fine lines
+      this.speed = 1.8 + Math.random() * 4.5;
+      
+      // Curvature creates arcing path. Left sweeps curve left, right sweeps curve right
+      const isLeft = Math.cos(this.theta) < 0;
+      this.curvature = (isLeft ? -1 : 1) * (0.00008 + Math.random() * 0.00012);
 
-      // Vertical speed (pixels/frame at 60fps)
-      this.speed  = 1.2 + Math.random() * 4.0;
-
-      // Very slight tilt (Lightfall is nearly perfectly vertical)
-      this.tiltX  = (Math.random() - 0.5) * 0.4;  // px moved per px fallen
-
-      // Color
-      this.color  = COLORS[Math.floor(Math.random() * COLORS.length)];
-
-      // Depth: drives brightness & slightly width
-      this.depth  = 0.25 + Math.random() * 0.75;
-
-      // Base opacity
-      this.baseA  = 0.06 + this.depth * 0.5;
-
+      this.depth = 0.2 + Math.random() * 0.8;
+      this.baseAlpha = 0.07 + this.depth * 0.48;
+      
       // Twinkle
-      this.twinkT = Math.random() * Math.PI * 2;
-      this.twinkS = 0.03 + Math.random() * 0.06;
+      this.twinkSpeed = 0.02 + Math.random() * 0.05;
+      this.twinkTime = Math.random() * Math.PI * 2;
+      this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
     }
 
     update() {
-      this.y     += this.speed;
-      this.x     += this.tiltX;
-      this.twinkT += this.twinkS;
+      this.r += this.speed;
+      this.twinkTime += this.twinkSpeed;
 
-      // Twinkle alpha
-      this.alpha  = this.baseA * (0.65 + 0.35 * Math.sin(this.twinkT));
+      // Base opacity + twinkle oscillation
+      this.alpha = this.baseAlpha * (0.6 + 0.4 * Math.sin(this.twinkTime));
 
-      // Mouse glow boost — streaks near mouse get ~2× brighter
-      const midY = this.y - this.len * 0.5;
-      const dx   = this.x - mouse.x;
-      const dy   = midY  - mouse.y;
+      // Coordinate of streak head for mouse distance check
+      const headTheta = this.theta + this.curvature * this.r;
+      const headX = FX + Math.cos(headTheta) * this.r;
+      const headY = FY + Math.sin(headTheta) * this.r;
+
+      // Mouse flaring effect
+      const dx = headX - mouse.x;
+      const dy = headY - mouse.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < 220) {
-        const boost = (1 - dist / 220) * 0.7;
-        this.alpha  = Math.min(1, this.alpha + boost);
+        const boost = (1 - dist / 220) * 0.75;
+        this.alpha = Math.min(1.0, this.alpha + boost);
       }
 
-      // Recycle when tail exits bottom
-      if (this.y - this.len > H + 10) this.init(false);
+      // Recycle if tail goes off screen
+      const tailR = this.r - this.len;
+      const tailTheta = this.theta + this.curvature * tailR;
+      const tailX = FX + Math.cos(tailTheta) * tailR;
+      const tailY = FY + Math.sin(tailTheta) * tailR;
+
+      if (tailY > H + 50 || tailX < -50 || tailX > W + 50) {
+        this.reset(false);
+      }
     }
 
     draw() {
-      // Head coords (falling: head is at y, tail is y-len above)
-      const hx = this.x;
-      const hy = this.y;
-      const tx = this.x - this.tiltX * this.len;
-      const ty = this.y - this.len;
-
       ctx.save();
-      ctx.globalCompositeOperation = 'lighter';   // additive blending = bloom/glow
+      ctx.globalCompositeOperation = 'lighter'; // additive blending
       ctx.globalAlpha = this.alpha;
 
       // Blur for glow
-      ctx.shadowBlur  = 6 + this.depth * 10;
+      ctx.shadowBlur = 5 + this.depth * 8;
       ctx.shadowColor = this.color;
 
-      // Gradient: head bright → tail transparent
-      const grd = ctx.createLinearGradient(hx, hy, tx, ty);
-      grd.addColorStop(0.0, this.color);           // head: full color
+      ctx.beginPath();
+      const steps = 4;
+      let headX, headY, tailX, tailY;
+
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps; // 0 at head, 1 at tail
+        const currR = this.r - this.len * t;
+        const currTheta = this.theta + this.curvature * currR;
+        const px = FX + Math.cos(currTheta) * currR;
+        const py = FY + Math.sin(currTheta) * currR;
+
+        if (i === 0) {
+          ctx.moveTo(px, py);
+          headX = px;
+          headY = py;
+        } else {
+          ctx.lineTo(px, py);
+          if (i === steps) {
+            tailX = px;
+            tailY = py;
+          }
+        }
+      }
+
+      // Gradient from head (opaque) to tail (transparent)
+      const grd = ctx.createLinearGradient(headX, headY, tailX, tailY);
+      grd.addColorStop(0.0, this.color);
       grd.addColorStop(0.3, hexAlpha(this.color, 0.6));
-      grd.addColorStop(1.0, hexAlpha(this.color, 0)); // tail: transparent
+      grd.addColorStop(1.0, hexAlpha(this.color, 0));
 
       ctx.strokeStyle = grd;
-      ctx.lineWidth   = this.w;
-      ctx.lineCap     = 'round';
-      ctx.beginPath();
-      ctx.moveTo(hx, hy);
-      ctx.lineTo(tx, ty);
+      ctx.lineWidth = this.w;
+      ctx.lineCap = 'round';
       ctx.stroke();
       ctx.restore();
     }
   }
 
-  // Utility: hex color + alpha as rgba
+  // Utility: hex to rgba
   function hexAlpha(hex, a) {
-    const r = parseInt(hex.slice(1,3),16);
-    const g = parseInt(hex.slice(3,5),16);
-    const b = parseInt(hex.slice(5,7),16);
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
     return `rgba(${r},${g},${b},${a})`;
   }
 
@@ -134,31 +152,39 @@
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     W = canvas.offsetWidth;
     H = canvas.offsetHeight;
-    canvas.width  = W * dpr;
+    canvas.width = W * dpr;
     canvas.height = H * dpr;
     ctx.scale(dpr, dpr);
+
+    // Focal point just above top-center
+    FX = W * 0.52;
+    FY = -80;
   }
 
   // ── Render ───────────────────────────────────────────────────────────────
   function render() {
     rafId = requestAnimationFrame(render);
 
-    // Deep background fill — Lightfall uses #120F17 exactly
+    // Radial gradient background to match reactbits.dev: blue-purple center glow
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
-    ctx.fillStyle   = BG_COLOR;
+
+    const bgGrd = ctx.createRadialGradient(FX, FY + 100, 50, W / 2, H / 2, Math.max(W, H));
+    bgGrd.addColorStop(0, '#251690');       // bright royal blue-purple glow
+    bgGrd.addColorStop(0.35, '#120F17');    // exact Lightfall background (#120F17)
+    bgGrd.addColorStop(1.0, '#0c0a10');     // dark violet-black edges
+
+    ctx.fillStyle = bgGrd;
     ctx.fillRect(0, 0, W, H);
 
-    // Draw all streaks (additive mode handled inside Streak.draw())
+    // Draw all streaks
     streaks.forEach(s => { s.update(); s.draw(); });
 
-    // Subtle vignette — darken corners, keep centre open
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1;
-    const vig = ctx.createRadialGradient(W/2, H/2, H * 0.2, W/2, H/2, H);
-    vig.addColorStop(0,   'rgba(0,0,0,0)');
-    vig.addColorStop(0.7, 'rgba(0,0,0,0.25)');
-    vig.addColorStop(1,   'rgba(0,0,0,0.72)');
+    // Subtle dark vignette overlay
+    const vig = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, Math.max(W, H));
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(0.7, 'rgba(0,0,0,0.15)');
+    vig.addColorStop(1, 'rgba(0,0,0,0.55)');
     ctx.fillStyle = vig;
     ctx.fillRect(0, 0, W, H);
   }
@@ -171,12 +197,15 @@
       mouse.x = e.clientX - r.left;
       mouse.y = e.clientY - r.top;
     });
-    landing.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+    landing.addEventListener('mouseleave', () => {
+      mouse.x = -9999;
+      mouse.y = -9999;
+    });
   }
 
   // ── Start ────────────────────────────────────────────────────────────────
   resize();
-  streaks = Array.from({ length: STREAK_COUNT }, () => new Streak(true));
+  streaks = Array.from({ length: COUNT }, () => new Streak(true));
   render();
 
   window.addEventListener('resize', () => {
