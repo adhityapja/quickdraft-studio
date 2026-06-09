@@ -1,204 +1,188 @@
-// ═══════════════════════════════════════════════════════════════════
-//  LIGHTFALL BACKGROUND  — pure Canvas 2D, no dependencies
-//  Inspired by reactbits.dev/backgrounds/lightfall
-//  Gold / Amber palette for QuickDraft Studio
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+//  LIGHTFALL BACKGROUND  ─ exact recreation of reactbits.dev/backgrounds/lightfall
+//  Pure Canvas 2D, no external dependencies needed.
+//  Characteristic look: near-black void, dense white/silver cold-light streaks
+//  falling straight down with additive glow, subtle tilt, twinkle & mouse boost.
+// ═══════════════════════════════════════════════════════════════════════════
 
 (function initLightfall() {
   const canvas = document.getElementById('canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  // ── Config ──────────────────────────────────────────────────────
-  const CFG = {
-    streakCount:   90,
-    minLen:        80,
-    maxLen:        380,
-    minWidth:      0.4,
-    maxWidth:      2.6,
-    minSpeed:      0.6,
-    maxSpeed:      2.8,
-    minAlpha:      0.08,
-    maxAlpha:      0.55,
-    spread:        0.18,          // horizontal sway ± fraction of width
-    tiltRange:     0.12,          // radians from vertical
-    twinkleSpeed:  0.018,
-    colors: [
-      '#e8a020', '#f5c842', '#ffae00',
-      '#ffd060', '#ff8c00', '#e8c060',
-      '#fff0a0', '#ffb830',
-    ],
-    bgColor:       '#0a0800',
-    glowBlur:      18,
-    mouseGlow:     true,
-    mouseRadius:   200,
-    mouseStrength: 0.28,
-  };
+  // ── Config ─ matches reactbits Lightfall defaults ────────────────────────
+  const STREAK_COUNT = 300;   // dense field like the original
+  const BG_COLOR     = '#120F17';  // exact Lightfall page background
 
-  // ── State ────────────────────────────────────────────────────────
+  // Lightfall uses mostly white/silver with very subtle hue tints
+  const COLORS = [
+    '#ffffff',    // pure white  (most common)
+    '#e8f0ff',    // cold blue-white
+    '#f0e8ff',    // very pale violet
+    '#d8eaff',    // sky blue-white
+    '#fff8f0',    // warm white
+    '#ffffff',    // pure white  (doubled weight)
+    '#ffffff',    // pure white  (tripled weight)
+    '#f4f0ff',    // ghost violet
+  ];
+
   let W, H;
   let mouse = { x: -9999, y: -9999 };
   let streaks = [];
   let rafId;
 
-  // ── Streak class ─────────────────────────────────────────────────
+  // ── Streak ───────────────────────────────────────────────────────────────
   class Streak {
-    constructor() { this.reset(true); }
+    constructor(scatterY = false) { this.init(scatterY); }
 
-    reset(init = false) {
-      this.x     = (Math.random() - 0.5) * 2 * W * (0.5 + CFG.spread) + W / 2;
-      this.y     = init ? Math.random() * H : -CFG.maxLen * 1.5;
-      this.len   = CFG.minLen + Math.random() * (CFG.maxLen - CFG.minLen);
-      this.w     = CFG.minWidth + Math.random() * (CFG.maxWidth - CFG.minWidth);
-      this.speed = CFG.minSpeed + Math.random() * (CFG.maxSpeed - CFG.minSpeed);
-      this.tilt  = (Math.random() - 0.5) * 2 * CFG.tiltRange;
-      this.color = CFG.colors[Math.floor(Math.random() * CFG.colors.length)];
-      this.baseAlpha = CFG.minAlpha + Math.random() * (CFG.maxAlpha - CFG.minAlpha);
-      this.alpha    = this.baseAlpha;
-      this.twinkleT = Math.random() * Math.PI * 2;
+    init(scatterY = false) {
+      // Horizontal spread covers full canvas width plus overflow
+      this.x      = Math.random() * W;
+      // Start above viewport; scatter on first load
+      this.y      = scatterY ? (Math.random() * (H + 400) - 200) : -(20 + Math.random() * 500);
+
+      // Length in pixels — longer streaks = more "fall" sense
+      this.len    = 60 + Math.random() * 320;
+
+      // Width: thin hair lines (Lightfall is very fine)
+      this.w      = 0.3 + Math.random() * 1.8;
+
+      // Vertical speed (pixels/frame at 60fps)
+      this.speed  = 1.2 + Math.random() * 4.0;
+
+      // Very slight tilt (Lightfall is nearly perfectly vertical)
+      this.tiltX  = (Math.random() - 0.5) * 0.4;  // px moved per px fallen
+
+      // Color
+      this.color  = COLORS[Math.floor(Math.random() * COLORS.length)];
+
+      // Depth: drives brightness & slightly width
+      this.depth  = 0.25 + Math.random() * 0.75;
+
+      // Base opacity
+      this.baseA  = 0.06 + this.depth * 0.5;
+
+      // Twinkle
+      this.twinkT = Math.random() * Math.PI * 2;
+      this.twinkS = 0.03 + Math.random() * 0.06;
     }
 
     update() {
-      this.y += this.speed;
-      this.x += Math.sin(this.tilt) * this.speed * 0.5;
+      this.y     += this.speed;
+      this.x     += this.tiltX;
+      this.twinkT += this.twinkS;
 
-      // Twinkle
-      this.twinkleT += CFG.twinkleSpeed;
-      this.alpha = this.baseAlpha * (0.7 + 0.3 * Math.sin(this.twinkleT));
+      // Twinkle alpha
+      this.alpha  = this.baseA * (0.65 + 0.35 * Math.sin(this.twinkT));
 
-      // Mouse proximity glow
-      if (CFG.mouseGlow) {
-        const midY = this.y - this.len / 2;
-        const dx   = this.x - mouse.x;
-        const dy   = midY  - mouse.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < CFG.mouseRadius) {
-          const factor = 1 - dist / CFG.mouseRadius;
-          this.alpha = Math.min(1, this.alpha + factor * CFG.mouseStrength);
-        }
+      // Mouse glow boost — streaks near mouse get ~2× brighter
+      const midY = this.y - this.len * 0.5;
+      const dx   = this.x - mouse.x;
+      const dy   = midY  - mouse.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 220) {
+        const boost = (1 - dist / 220) * 0.7;
+        this.alpha  = Math.min(1, this.alpha + boost);
       }
 
-      // Reset when off-screen bottom
-      if (this.y - this.len > H + 20) this.reset();
+      // Recycle when tail exits bottom
+      if (this.y - this.len > H + 10) this.init(false);
     }
 
-    draw(ctx) {
+    draw() {
+      // Head coords (falling: head is at y, tail is y-len above)
+      const hx = this.x;
+      const hy = this.y;
+      const tx = this.x - this.tiltX * this.len;
+      const ty = this.y - this.len;
+
       ctx.save();
+      ctx.globalCompositeOperation = 'lighter';   // additive blending = bloom/glow
       ctx.globalAlpha = this.alpha;
-      ctx.shadowBlur  = CFG.glowBlur;
+
+      // Blur for glow
+      ctx.shadowBlur  = 6 + this.depth * 10;
       ctx.shadowColor = this.color;
 
-      const grd = ctx.createLinearGradient(
-        this.x, this.y,
-        this.x + Math.sin(this.tilt) * this.len,
-        this.y - this.len
-      );
-      grd.addColorStop(0,   this.color + '00');  // tail — transparent
-      grd.addColorStop(0.4, this.color + 'aa');
-      grd.addColorStop(1,   this.color + 'ff');  // head — bright
+      // Gradient: head bright → tail transparent
+      const grd = ctx.createLinearGradient(hx, hy, tx, ty);
+      grd.addColorStop(0.0, this.color);           // head: full color
+      grd.addColorStop(0.3, hexAlpha(this.color, 0.6));
+      grd.addColorStop(1.0, hexAlpha(this.color, 0)); // tail: transparent
 
       ctx.strokeStyle = grd;
       ctx.lineWidth   = this.w;
       ctx.lineCap     = 'round';
       ctx.beginPath();
-      ctx.moveTo(this.x, this.y);
-      ctx.lineTo(
-        this.x + Math.sin(this.tilt) * this.len,
-        this.y - this.len
-      );
+      ctx.moveTo(hx, hy);
+      ctx.lineTo(tx, ty);
       ctx.stroke();
       ctx.restore();
     }
   }
 
-  // ── Resize ───────────────────────────────────────────────────────
+  // Utility: hex color + alpha as rgba
+  function hexAlpha(hex, a) {
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  // ── Resize ───────────────────────────────────────────────────────────────
   function resize() {
-    const dpr  = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     W = canvas.offsetWidth;
     H = canvas.offsetHeight;
     canvas.width  = W * dpr;
     canvas.height = H * dpr;
     ctx.scale(dpr, dpr);
-
-    // Re-scatter existing streaks on resize
-    streaks.forEach(s => { s.x = Math.random() * W; });
   }
 
-  // ── Init streaks ─────────────────────────────────────────────────
-  function buildStreaks() {
-    streaks = Array.from({ length: CFG.streakCount }, () => new Streak());
-  }
+  // ── Render ───────────────────────────────────────────────────────────────
+  function render() {
+    rafId = requestAnimationFrame(render);
 
-  // ── Ambient glow blobs (static, painted once per frame behind streaks) ──
-  function drawAmbient() {
-    // Deep amber glow top-centre
-    const g1 = ctx.createRadialGradient(W * 0.5, H * 0.08, 0, W * 0.5, H * 0.08, W * 0.55);
-    g1.addColorStop(0,   'rgba(200,120,10,0.13)');
-    g1.addColorStop(0.5, 'rgba(180,100,5,0.05)');
-    g1.addColorStop(1,   'transparent');
-    ctx.fillStyle = g1;
-    ctx.fillRect(0, 0, W, H);
-
-    // Warm side vignette
-    const g2 = ctx.createRadialGradient(0, H * 0.5, 0, 0, H * 0.5, W * 0.5);
-    g2.addColorStop(0,   'rgba(255,160,10,0.06)');
-    g2.addColorStop(1,   'transparent');
-    ctx.fillStyle = g2;
-    ctx.fillRect(0, 0, W, H);
-
-    const g3 = ctx.createRadialGradient(W, H * 0.5, 0, W, H * 0.5, W * 0.5);
-    g3.addColorStop(0,   'rgba(255,160,10,0.04)');
-    g3.addColorStop(1,   'transparent');
-    ctx.fillStyle = g3;
-    ctx.fillRect(0, 0, W, H);
-  }
-
-  // ── Animation loop ────────────────────────────────────────────────
-  function animate() {
-    rafId = requestAnimationFrame(animate);
-
-    // Background
-    ctx.fillStyle = CFG.bgColor;
-    ctx.fillRect(0, 0, W, H);
-
-    drawAmbient();
-
-    // Sort by alpha ascending so bright streaks paint on top
-    streaks.sort((a, b) => a.baseAlpha - b.baseAlpha);
-
-    streaks.forEach(s => { s.update(); s.draw(ctx); });
-
-    // Vignette overlay — fade edges to black
-    const vig = ctx.createRadialGradient(W/2, H/2, H * 0.28, W/2, H/2, H * 0.85);
-    vig.addColorStop(0, 'transparent');
-    vig.addColorStop(1, 'rgba(0,0,0,0.55)');
+    // Deep background fill — Lightfall uses #120F17 exactly
+    ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
-    ctx.fillStyle   = vig;
+    ctx.fillStyle   = BG_COLOR;
+    ctx.fillRect(0, 0, W, H);
+
+    // Draw all streaks (additive mode handled inside Streak.draw())
+    streaks.forEach(s => { s.update(); s.draw(); });
+
+    // Subtle vignette — darken corners, keep centre open
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    const vig = ctx.createRadialGradient(W/2, H/2, H * 0.2, W/2, H/2, H);
+    vig.addColorStop(0,   'rgba(0,0,0,0)');
+    vig.addColorStop(0.7, 'rgba(0,0,0,0.25)');
+    vig.addColorStop(1,   'rgba(0,0,0,0.72)');
+    ctx.fillStyle = vig;
     ctx.fillRect(0, 0, W, H);
   }
 
-  // ── Mouse tracking ────────────────────────────────────────────────
-  const section = document.getElementById('landing');
-  if (section) {
-    section.addEventListener('mousemove', e => {
-      const r = section.getBoundingClientRect();
+  // ── Mouse ────────────────────────────────────────────────────────────────
+  const landing = document.getElementById('landing');
+  if (landing) {
+    landing.addEventListener('mousemove', e => {
+      const r = landing.getBoundingClientRect();
       mouse.x = e.clientX - r.left;
       mouse.y = e.clientY - r.top;
     });
-    section.addEventListener('mouseleave', () => {
-      mouse.x = -9999; mouse.y = -9999;
-    });
+    landing.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
   }
 
-  // ── Start ────────────────────────────────────────────────────────
+  // ── Start ────────────────────────────────────────────────────────────────
   resize();
-  buildStreaks();
-  animate();
+  streaks = Array.from({ length: STREAK_COUNT }, () => new Streak(true));
+  render();
 
   window.addEventListener('resize', () => {
     cancelAnimationFrame(rafId);
     resize();
-    animate();
+    render();
   });
 })();
 
