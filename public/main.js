@@ -1,61 +1,214 @@
-// ── Liquid Background (same lib as CodePen, dark-purple texture) ─────────────
-import LiquidBackground from 'https://cdn.jsdelivr.net/npm/threejs-components@0.0.27/build/backgrounds/liquid1.min.js';
+// ═══════════════════════════════════════════════════════════════════
+//  LIGHTFALL BACKGROUND  — pure Canvas 2D, no dependencies
+//  Inspired by reactbits.dev/backgrounds/lightfall
+//  Gold / Amber palette for QuickDraft Studio
+// ═══════════════════════════════════════════════════════════════════
 
-/**
- * Build a 512×512 dark-purple environment texture on a canvas
- * and return it as a data-URL so LiquidBackground can load it.
- * This replaces the rainbow `liquid.webp` from the original CodePen.
- */
-function makePurpleTexture() {
-  const SIZE = 512;
-  const c    = document.createElement('canvas');
-  c.width    = SIZE;
-  c.height   = SIZE;
-  const g    = c.getContext('2d');
+(function initLightfall() {
+  const canvas = document.getElementById('canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
 
-  // ── base gradient ──
-  const base = g.createLinearGradient(0, 0, SIZE, SIZE);
-  base.addColorStop(0.00, '#0b0620');
-  base.addColorStop(0.30, '#1e0d45');
-  base.addColorStop(0.60, '#0f0730');
-  base.addColorStop(1.00, '#060611');
-  g.fillStyle = base;
-  g.fillRect(0, 0, SIZE, SIZE);
+  // ── Config ──────────────────────────────────────────────────────
+  const CFG = {
+    streakCount:   90,
+    minLen:        80,
+    maxLen:        380,
+    minWidth:      0.4,
+    maxWidth:      2.6,
+    minSpeed:      0.6,
+    maxSpeed:      2.8,
+    minAlpha:      0.08,
+    maxAlpha:      0.55,
+    spread:        0.18,          // horizontal sway ± fraction of width
+    tiltRange:     0.12,          // radians from vertical
+    twinkleSpeed:  0.018,
+    colors: [
+      '#e8a020', '#f5c842', '#ffae00',
+      '#ffd060', '#ff8c00', '#e8c060',
+      '#fff0a0', '#ffb830',
+    ],
+    bgColor:       '#0a0800',
+    glowBlur:      18,
+    mouseGlow:     true,
+    mouseRadius:   200,
+    mouseStrength: 0.28,
+  };
 
-  // ── glowing accent blobs ──
-  const blobs = [
-    { x: 160, y: 150, r: 230, c0: 'rgba(123,91,219,0.60)',  c1: 'rgba(123,91,219,0)' },
-    { x: 390, y: 340, r: 210, c0: 'rgba(80,40,200,0.45)',   c1: 'rgba(80,40,200,0)'  },
-    { x: 280, y: 430, r: 180, c0: 'rgba(160,110,255,0.35)', c1: 'rgba(160,110,255,0)'},
-    { x: 430, y: 90,  r: 160, c0: 'rgba(90,50,185,0.40)',   c1: 'rgba(90,50,185,0)'  },
-    { x:  60, y: 380, r: 150, c0: 'rgba(200,150,255,0.20)', c1: 'rgba(200,150,255,0)'},
-  ];
-  blobs.forEach(b => {
-    const rad = g.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
-    rad.addColorStop(0, b.c0);
-    rad.addColorStop(1, b.c1);
-    g.fillStyle = rad;
-    g.fillRect(0, 0, SIZE, SIZE);
+  // ── State ────────────────────────────────────────────────────────
+  let W, H;
+  let mouse = { x: -9999, y: -9999 };
+  let streaks = [];
+  let rafId;
+
+  // ── Streak class ─────────────────────────────────────────────────
+  class Streak {
+    constructor() { this.reset(true); }
+
+    reset(init = false) {
+      this.x     = (Math.random() - 0.5) * 2 * W * (0.5 + CFG.spread) + W / 2;
+      this.y     = init ? Math.random() * H : -CFG.maxLen * 1.5;
+      this.len   = CFG.minLen + Math.random() * (CFG.maxLen - CFG.minLen);
+      this.w     = CFG.minWidth + Math.random() * (CFG.maxWidth - CFG.minWidth);
+      this.speed = CFG.minSpeed + Math.random() * (CFG.maxSpeed - CFG.minSpeed);
+      this.tilt  = (Math.random() - 0.5) * 2 * CFG.tiltRange;
+      this.color = CFG.colors[Math.floor(Math.random() * CFG.colors.length)];
+      this.baseAlpha = CFG.minAlpha + Math.random() * (CFG.maxAlpha - CFG.minAlpha);
+      this.alpha    = this.baseAlpha;
+      this.twinkleT = Math.random() * Math.PI * 2;
+    }
+
+    update() {
+      this.y += this.speed;
+      this.x += Math.sin(this.tilt) * this.speed * 0.5;
+
+      // Twinkle
+      this.twinkleT += CFG.twinkleSpeed;
+      this.alpha = this.baseAlpha * (0.7 + 0.3 * Math.sin(this.twinkleT));
+
+      // Mouse proximity glow
+      if (CFG.mouseGlow) {
+        const midY = this.y - this.len / 2;
+        const dx   = this.x - mouse.x;
+        const dy   = midY  - mouse.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CFG.mouseRadius) {
+          const factor = 1 - dist / CFG.mouseRadius;
+          this.alpha = Math.min(1, this.alpha + factor * CFG.mouseStrength);
+        }
+      }
+
+      // Reset when off-screen bottom
+      if (this.y - this.len > H + 20) this.reset();
+    }
+
+    draw(ctx) {
+      ctx.save();
+      ctx.globalAlpha = this.alpha;
+      ctx.shadowBlur  = CFG.glowBlur;
+      ctx.shadowColor = this.color;
+
+      const grd = ctx.createLinearGradient(
+        this.x, this.y,
+        this.x + Math.sin(this.tilt) * this.len,
+        this.y - this.len
+      );
+      grd.addColorStop(0,   this.color + '00');  // tail — transparent
+      grd.addColorStop(0.4, this.color + 'aa');
+      grd.addColorStop(1,   this.color + 'ff');  // head — bright
+
+      ctx.strokeStyle = grd;
+      ctx.lineWidth   = this.w;
+      ctx.lineCap     = 'round';
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y);
+      ctx.lineTo(
+        this.x + Math.sin(this.tilt) * this.len,
+        this.y - this.len
+      );
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // ── Resize ───────────────────────────────────────────────────────
+  function resize() {
+    const dpr  = Math.min(window.devicePixelRatio || 1, 2);
+    W = canvas.offsetWidth;
+    H = canvas.offsetHeight;
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
+
+    // Re-scatter existing streaks on resize
+    streaks.forEach(s => { s.x = Math.random() * W; });
+  }
+
+  // ── Init streaks ─────────────────────────────────────────────────
+  function buildStreaks() {
+    streaks = Array.from({ length: CFG.streakCount }, () => new Streak());
+  }
+
+  // ── Ambient glow blobs (static, painted once per frame behind streaks) ──
+  function drawAmbient() {
+    // Deep amber glow top-centre
+    const g1 = ctx.createRadialGradient(W * 0.5, H * 0.08, 0, W * 0.5, H * 0.08, W * 0.55);
+    g1.addColorStop(0,   'rgba(200,120,10,0.13)');
+    g1.addColorStop(0.5, 'rgba(180,100,5,0.05)');
+    g1.addColorStop(1,   'transparent');
+    ctx.fillStyle = g1;
+    ctx.fillRect(0, 0, W, H);
+
+    // Warm side vignette
+    const g2 = ctx.createRadialGradient(0, H * 0.5, 0, 0, H * 0.5, W * 0.5);
+    g2.addColorStop(0,   'rgba(255,160,10,0.06)');
+    g2.addColorStop(1,   'transparent');
+    ctx.fillStyle = g2;
+    ctx.fillRect(0, 0, W, H);
+
+    const g3 = ctx.createRadialGradient(W, H * 0.5, 0, W, H * 0.5, W * 0.5);
+    g3.addColorStop(0,   'rgba(255,160,10,0.04)');
+    g3.addColorStop(1,   'transparent');
+    ctx.fillStyle = g3;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // ── Animation loop ────────────────────────────────────────────────
+  function animate() {
+    rafId = requestAnimationFrame(animate);
+
+    // Background
+    ctx.fillStyle = CFG.bgColor;
+    ctx.fillRect(0, 0, W, H);
+
+    drawAmbient();
+
+    // Sort by alpha ascending so bright streaks paint on top
+    streaks.sort((a, b) => a.baseAlpha - b.baseAlpha);
+
+    streaks.forEach(s => { s.update(); s.draw(ctx); });
+
+    // Vignette overlay — fade edges to black
+    const vig = ctx.createRadialGradient(W/2, H/2, H * 0.28, W/2, H/2, H * 0.85);
+    vig.addColorStop(0, 'transparent');
+    vig.addColorStop(1, 'rgba(0,0,0,0.55)');
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = vig;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // ── Mouse tracking ────────────────────────────────────────────────
+  const section = document.getElementById('landing');
+  if (section) {
+    section.addEventListener('mousemove', e => {
+      const r = section.getBoundingClientRect();
+      mouse.x = e.clientX - r.left;
+      mouse.y = e.clientY - r.top;
+    });
+    section.addEventListener('mouseleave', () => {
+      mouse.x = -9999; mouse.y = -9999;
+    });
+  }
+
+  // ── Start ────────────────────────────────────────────────────────
+  resize();
+  buildStreaks();
+  animate();
+
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(rafId);
+    resize();
+    animate();
   });
+})();
 
-  return c.toDataURL('image/jpeg', 0.95);
-}
-
-// ── init the Three.js liquid ──────────────────────────────────────────────────
-const bg = LiquidBackground(document.getElementById('canvas'));
-bg.loadImage(makePurpleTexture());
-bg.liquidPlane.material.metalness = 0.82;
-bg.liquidPlane.material.roughness = 0.18;
-bg.liquidPlane.uniforms.displacementScale.value = 5;
-bg.setRain(false);
 
 // ── Scroll & Nav Dots ────────────────────────────────────────────────────────
 const container = document.getElementById('scrollContainer');
-const sections = document.querySelectorAll('.section');
-const dots = document.querySelectorAll('.dot');
-const navbar = document.getElementById('navbar');
+const sections  = document.querySelectorAll('.section');
+const dots      = document.querySelectorAll('.dot');
+const navbar    = document.getElementById('navbar');
 
-// Dot click → scroll to section
 dots.forEach(dot => {
   dot.addEventListener('click', () => {
     const target = document.getElementById(dot.dataset.target);
@@ -63,7 +216,6 @@ dots.forEach(dot => {
   });
 });
 
-// Navbar link click → scroll within container
 document.querySelectorAll('.nav-links a, .landing-cta a').forEach(a => {
   a.addEventListener('click', e => {
     const href = a.getAttribute('href');
@@ -75,7 +227,6 @@ document.querySelectorAll('.nav-links a, .landing-cta a').forEach(a => {
   });
 });
 
-// IntersectionObserver → active dot tracking only
 const observer = new IntersectionObserver(entries => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
@@ -87,18 +238,15 @@ const observer = new IntersectionObserver(entries => {
 
 sections.forEach(s => observer.observe(s));
 
-// Separate observer for .reveal elements — triggers as soon as element enters viewport
-// This fixes mobile where the section header can be above-viewport when section loads
 const revealObserver = new IntersectionObserver(entries => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
       entry.target.classList.add('visible');
-      revealObserver.unobserve(entry.target); // stop watching once visible
+      revealObserver.unobserve(entry.target);
     }
   });
 }, { threshold: 0.1, root: container });
 
-// Observe all current .reveal elements + re-observe after content loads
 function observeRevealEls() {
   document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 }
@@ -120,7 +268,6 @@ async function loadAll() {
     renderClients(clients);
     renderReels(reels);
     renderContact(contact);
-    // Re-observe after dynamic content is injected
     observeRevealEls();
   } catch (err) {
     console.warn('API not reachable, showing defaults:', err.message);
@@ -201,16 +348,16 @@ function renderSamples(items) {
 }
 
 // ── Clients ──────────────────────────────────────────────────────────────────
-let allClients = [];
+let allClients     = [];
 let clientsExpanded = false;
 
 function renderClients(items) {
-  const grid = document.getElementById('clientsGrid');
+  const grid        = document.getElementById('clientsGrid');
   const showMoreWrap = document.getElementById('showMoreWrap');
-  const showMoreBtn = document.getElementById('showMoreClients');
+  const showMoreBtn  = document.getElementById('showMoreClients');
   if (!grid) return;
 
-  allClients = items;
+  allClients      = items;
   clientsExpanded = false;
 
   if (!items.length) {
@@ -219,10 +366,8 @@ function renderClients(items) {
     return;
   }
 
-  // Show first 4 initially
   renderClientCards(grid, items.slice(0, 4));
 
-  // Show/hide "Show More" button
   if (items.length > 4 && showMoreWrap) {
     showMoreWrap.style.display = '';
     showMoreBtn.textContent = `Show More (${items.length - 4} more)`;
@@ -233,7 +378,6 @@ function renderClients(items) {
 
 function renderClientCards(grid, clients) {
   grid.innerHTML = clients.map(client => {
-    const igUrl = `https://instagram.com/${client.instagramHandle.replace('@', '')}`;
     return `
       <div class="client-card">
         <div class="client-screenshot">
@@ -255,58 +399,43 @@ function renderClientCards(grid, clients) {
   }).join('');
 }
 
-// Show More / Show Less toggle
 document.getElementById('showMoreClients')?.addEventListener('click', () => {
-  const grid = document.getElementById('clientsGrid');
-  const btn = document.getElementById('showMoreClients');
-  const section = document.getElementById('clients');
+  const grid      = document.getElementById('clientsGrid');
+  const btn       = document.getElementById('showMoreClients');
+  const section   = document.getElementById('clients');
   const scrollCont = document.getElementById('scrollContainer');
-  const moreNote = document.getElementById('clientsMoreNote');
+  const moreNote  = document.getElementById('clientsMoreNote');
   if (!grid) return;
 
   clientsExpanded = !clientsExpanded;
 
-  // Always disable scroll-snap first to prevent snap-jump on resize
   if (scrollCont) scrollCont.style.scrollSnapType = 'none';
 
   if (clientsExpanded) {
     renderClientCards(grid, allClients);
     grid.style.maxHeight = 'none';
     btn.textContent = 'Show Less';
-
-    // Show the "more clients" note
     if (moreNote) moreNote.style.display = '';
-
-    // Allow section to grow beyond 100vh
     if (section) {
-      section.style.height = 'auto';
-      section.style.minHeight = '100vh';
+      section.style.height      = 'auto';
+      section.style.minHeight   = '100vh';
       section.style.scrollSnapAlign = 'none';
     }
-
-    // Scroll back to top of clients section after layout reflows
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
-
   } else {
     renderClientCards(grid, allClients.slice(0, 4));
     grid.style.maxHeight = '';
     btn.textContent = `Show More (${allClients.length - 4} more)`;
-
-    // Hide the "more clients" note
     if (moreNote) moreNote.style.display = 'none';
-
-    // Restore section to fixed height
     if (section) {
-      section.style.height = '';
-      section.style.minHeight = '';
+      section.style.height      = '';
+      section.style.minHeight   = '';
       section.style.scrollSnapAlign = '';
     }
-
-    // Scroll back to clients, then re-enable snap after scroll settles
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -318,17 +447,15 @@ document.getElementById('showMoreClients')?.addEventListener('click', () => {
   }
 });
 
-
-// ── Demo Reels (grouped by category) ───────────────────────────────────────
+// ── Demo Reels (grouped by category) ────────────────────────────────────────
 function renderReels(groups) {
-  const container = document.getElementById('reelsGrid');
-  if (!container) return;
+  const cont = document.getElementById('reelsGrid');
+  if (!cont) return;
 
-  // Filter to only groups that have reels
   const activeGroups = groups.filter(g => g.reels && g.reels.length > 0);
 
   if (!activeGroups.length) {
-    container.innerHTML = '<div class="empty-state">Demo reels coming soon!</div>';
+    cont.innerHTML = '<div class="empty-state">Demo reels coming soon!</div>';
     return;
   }
 
@@ -337,9 +464,7 @@ function renderReels(groups) {
   ).join('');
 
   const panelsHtml = activeGroups.map((g, i) => {
-    const cards = g.reels.map(item => {
-      if (!item.videoUrl) console.warn('[Reel missing videoUrl]', item.title, item);
-      return `
+    const cards = g.reels.map(item => `
       <a class="reel-card" href="${item.videoUrl || '#'}" target="_blank" rel="noopener noreferrer">
         <div class="reel-thumb">
           ${item.thumbnail
@@ -353,25 +478,23 @@ function renderReels(groups) {
           <div class="reel-title">${item.title}</div>
           ${item.description ? `<div class="reel-desc">${item.description}</div>` : ''}
         </div>
-      </a>`;
-    }).join('');
+      </a>`).join('');
 
     return `<div class="reel-panel${i === 0 ? ' active' : ''}" data-index="${i}">
       ${cards}
     </div>`;
   }).join('');
 
-  container.innerHTML = `
+  cont.innerHTML = `
     <div class="reel-tabs">${tabsHtml}</div>
     <div class="reel-panels">${panelsHtml}</div>`;
 
-  // Use index-based switching — reliable regardless of ObjectId format
-  const tabs = container.querySelectorAll('.reel-tab');
-  const panels = container.querySelectorAll('.reel-panel');
+  const tabs   = cont.querySelectorAll('.reel-tab');
+  const panels = cont.querySelectorAll('.reel-panel');
 
   tabs.forEach((tab, idx) => {
     tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
+      tabs.forEach(t   => t.classList.remove('active'));
       panels.forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
       panels[idx].classList.add('active');
@@ -379,18 +502,17 @@ function renderReels(groups) {
   });
 }
 
-
 // ── Contact ──────────────────────────────────────────────────────────────────
 function renderContact(data) {
   const cards = document.getElementById('contactCards');
   if (!cards || !data) return;
 
   const items = [
-    data.phone && { icon: '📞', label: 'Phone', val: data.phone, href: `tel:${data.phone}` },
+    data.phone    && { icon: '📞', label: 'Phone',     val: data.phone,    href: `tel:${data.phone}` },
     data.altPhone && { icon: '📱', label: 'Alt. Phone', val: data.altPhone, href: `tel:${data.altPhone}` },
-    data.email && { icon: '✉️', label: 'Email', val: data.email, href: `mailto:${data.email}` },
+    data.email    && { icon: '✉️', label: 'Email',     val: data.email,    href: `mailto:${data.email}` },
     data.instagram && { icon: '📸', label: 'Instagram', val: data.instagram, href: `https://instagram.com/${data.instagram.replace('@','')}` },
-    data.whatsapp && { icon: '💬', label: 'WhatsApp', val: data.whatsapp, href: `https://wa.me/${data.whatsapp.replace(/\\D/g,'')}` },
+    data.whatsapp  && { icon: '💬', label: 'WhatsApp',  val: data.whatsapp,  href: `https://wa.me/${data.whatsapp.replace(/\D/g,'')}` },
   ].filter(Boolean);
 
   cards.innerHTML = items.map(item => `
@@ -413,32 +535,30 @@ document.getElementById('contactForm')?.addEventListener('submit', async e => {
   const message  = document.getElementById('cfMessage').value.trim();
 
   btn.textContent = 'Sending...';
-  btn.disabled = true;
-  feedback.textContent = '';
-  feedback.className = 'form-feedback';
+  btn.disabled    = true;
+  feedback.textContent  = '';
+  feedback.className    = 'form-feedback';
 
   try {
-    const res = await fetch('/api/contact', {
+    const res  = await fetch('/api/contact', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, message }),
     });
-
     const data = await res.json();
-
     if (res.ok) {
       feedback.textContent = '✅ Message sent! We\'ll get back to you soon.';
-      feedback.className = 'form-feedback success';
+      feedback.className   = 'form-feedback success';
       e.target.reset();
     } else {
       throw new Error(data.message || 'Something went wrong.');
     }
   } catch (err) {
     feedback.textContent = `❌ ${err.message}`;
-    feedback.className = 'form-feedback error';
+    feedback.className   = 'form-feedback error';
   } finally {
     btn.textContent = 'Send Message ✨';
-    btn.disabled = false;
+    btn.disabled    = false;
   }
 });
 
@@ -455,7 +575,6 @@ hamburger?.addEventListener('click', () => {
   document.body.style.overflow = navLinks.classList.contains('mobile-open') ? 'hidden' : '';
 });
 
-// Close menu when any nav link is clicked
 navLinks?.querySelectorAll('a').forEach(link => {
   link.addEventListener('click', () => {
     hamburger.classList.remove('open');
@@ -464,5 +583,5 @@ navLinks?.querySelectorAll('a').forEach(link => {
   });
 });
 
-observeRevealEls(); // observe static .reveal elements on page load
+observeRevealEls();
 loadAll();
