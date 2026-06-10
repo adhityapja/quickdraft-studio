@@ -1,217 +1,204 @@
-// ═══════════════════════════════════════════════════════════════════════════
-//  LIGHTFALL BACKGROUND  ─ exact recreation of reactbits.dev/backgrounds/lightfall
-//  Radial arcing diagonal streaks fanning out from a top-center vanishing point
-//  Deep navy-indigo to dark violet gradient with center blue-purple glow
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+//  LIGHTFALL BACKGROUND  — pure Canvas 2D, no dependencies
+//  Inspired by reactbits.dev/backgrounds/lightfall
+//  Gold / Amber palette for QuickDraft Studio
+// ═══════════════════════════════════════════════════════════════════
 
 (function initLightfall() {
   const canvas = document.getElementById('canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  // ── Config ──────────────────────────────────────────────────────────────
-  const COUNT = 240; // dense visual field
-  
-  // ReactBits palette: white, pale lavender, light cold blue, and vibrant purples
-  const COLORS = [
-    '#ffffff', '#ffffff', '#ffffff', // white (dominant)
-    '#eef2ff', '#e0e7ff',           // cold blue-white
-    '#f5f0ff', '#e8dfff',           // pale lavender
-    '#c7b3ff', '#b49cff',           // light purple/violet
-    '#9b7fe8', '#805cee'            // vibrant violet
-  ];
+  // ── Config ──────────────────────────────────────────────────────
+  const CFG = {
+    streakCount:   90,
+    minLen:        80,
+    maxLen:        380,
+    minWidth:      0.4,
+    maxWidth:      2.6,
+    minSpeed:      0.6,
+    maxSpeed:      2.8,
+    minAlpha:      0.08,
+    maxAlpha:      0.55,
+    spread:        0.18,          // horizontal sway ± fraction of width
+    tiltRange:     0.12,          // radians from vertical
+    twinkleSpeed:  0.018,
+    colors: [
+      '#e8a020', '#f5c842', '#ffae00',
+      '#ffd060', '#ff8c00', '#e8c060',
+      '#fff0a0', '#ffb830',
+    ],
+    bgColor:       '#0a0800',
+    glowBlur:      18,
+    mouseGlow:     true,
+    mouseRadius:   200,
+    mouseStrength: 0.28,
+  };
 
+  // ── State ────────────────────────────────────────────────────────
   let W, H;
-  let FX, FY; // focal point coords
   let mouse = { x: -9999, y: -9999 };
   let streaks = [];
   let rafId;
 
-  // ── Streak ───────────────────────────────────────────────────────────────
+  // ── Streak class ─────────────────────────────────────────────────
   class Streak {
-    constructor(scatter = false) {
-      this.reset(scatter);
-    }
+    constructor() { this.reset(true); }
 
-    reset(scatter = false) {
-      // Angle: fan out downwards (roughly from 0.12 * PI to 0.88 * PI)
-      // This creates beautiful diagonal angles fanning left and right
-      this.theta = (0.12 + Math.random() * 0.76) * Math.PI;
-
-      // Start radius (distance from focal point)
-      const maxR = Math.sqrt(W * W + H * H);
-      this.r = scatter ? Math.random() * maxR : 10 + Math.random() * 80;
-
-      // Streak properties
-      this.len = 60 + Math.random() * 260;
-      this.w = 0.3 + Math.random() * 1.5; // fine lines
-      this.speed = 1.8 + Math.random() * 4.5;
-      
-      // Curvature creates arcing path. Left sweeps curve left, right sweeps curve right
-      const isLeft = Math.cos(this.theta) < 0;
-      this.curvature = (isLeft ? -1 : 1) * (0.00008 + Math.random() * 0.00012);
-
-      this.depth = 0.2 + Math.random() * 0.8;
-      this.baseAlpha = 0.07 + this.depth * 0.48;
-      
-      // Twinkle
-      this.twinkSpeed = 0.02 + Math.random() * 0.05;
-      this.twinkTime = Math.random() * Math.PI * 2;
-      this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    reset(init = false) {
+      this.x     = (Math.random() - 0.5) * 2 * W * (0.5 + CFG.spread) + W / 2;
+      this.y     = init ? Math.random() * H : -CFG.maxLen * 1.5;
+      this.len   = CFG.minLen + Math.random() * (CFG.maxLen - CFG.minLen);
+      this.w     = CFG.minWidth + Math.random() * (CFG.maxWidth - CFG.minWidth);
+      this.speed = CFG.minSpeed + Math.random() * (CFG.maxSpeed - CFG.minSpeed);
+      this.tilt  = (Math.random() - 0.5) * 2 * CFG.tiltRange;
+      this.color = CFG.colors[Math.floor(Math.random() * CFG.colors.length)];
+      this.baseAlpha = CFG.minAlpha + Math.random() * (CFG.maxAlpha - CFG.minAlpha);
+      this.alpha    = this.baseAlpha;
+      this.twinkleT = Math.random() * Math.PI * 2;
     }
 
     update() {
-      this.r += this.speed;
-      this.twinkTime += this.twinkSpeed;
+      this.y += this.speed;
+      this.x += Math.sin(this.tilt) * this.speed * 0.5;
 
-      // Base opacity + twinkle oscillation
-      this.alpha = this.baseAlpha * (0.6 + 0.4 * Math.sin(this.twinkTime));
+      // Twinkle
+      this.twinkleT += CFG.twinkleSpeed;
+      this.alpha = this.baseAlpha * (0.7 + 0.3 * Math.sin(this.twinkleT));
 
-      // Coordinate of streak head for mouse distance check
-      const headTheta = this.theta + this.curvature * this.r;
-      const headX = FX + Math.cos(headTheta) * this.r;
-      const headY = FY + Math.sin(headTheta) * this.r;
-
-      // Mouse flaring effect
-      const dx = headX - mouse.x;
-      const dy = headY - mouse.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 220) {
-        const boost = (1 - dist / 220) * 0.75;
-        this.alpha = Math.min(1.0, this.alpha + boost);
-      }
-
-      // Recycle if tail goes off screen
-      const tailR = this.r - this.len;
-      const tailTheta = this.theta + this.curvature * tailR;
-      const tailX = FX + Math.cos(tailTheta) * tailR;
-      const tailY = FY + Math.sin(tailTheta) * tailR;
-
-      if (tailY > H + 50 || tailX < -50 || tailX > W + 50) {
-        this.reset(false);
-      }
-    }
-
-    draw() {
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter'; // additive blending
-      ctx.globalAlpha = this.alpha;
-
-      // Blur for glow
-      ctx.shadowBlur = 5 + this.depth * 8;
-      ctx.shadowColor = this.color;
-
-      ctx.beginPath();
-      const steps = 4;
-      let headX, headY, tailX, tailY;
-
-      for (let i = 0; i <= steps; i++) {
-        const t = i / steps; // 0 at head, 1 at tail
-        const currR = this.r - this.len * t;
-        const currTheta = this.theta + this.curvature * currR;
-        const px = FX + Math.cos(currTheta) * currR;
-        const py = FY + Math.sin(currTheta) * currR;
-
-        if (i === 0) {
-          ctx.moveTo(px, py);
-          headX = px;
-          headY = py;
-        } else {
-          ctx.lineTo(px, py);
-          if (i === steps) {
-            tailX = px;
-            tailY = py;
-          }
+      // Mouse proximity glow
+      if (CFG.mouseGlow) {
+        const midY = this.y - this.len / 2;
+        const dx   = this.x - mouse.x;
+        const dy   = midY  - mouse.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CFG.mouseRadius) {
+          const factor = 1 - dist / CFG.mouseRadius;
+          this.alpha = Math.min(1, this.alpha + factor * CFG.mouseStrength);
         }
       }
 
-      // Gradient from head (opaque) to tail (transparent)
-      const grd = ctx.createLinearGradient(headX, headY, tailX, tailY);
-      grd.addColorStop(0.0, this.color);
-      grd.addColorStop(0.3, hexAlpha(this.color, 0.6));
-      grd.addColorStop(1.0, hexAlpha(this.color, 0));
+      // Reset when off-screen bottom
+      if (this.y - this.len > H + 20) this.reset();
+    }
+
+    draw(ctx) {
+      ctx.save();
+      ctx.globalAlpha = this.alpha;
+      ctx.shadowBlur  = CFG.glowBlur;
+      ctx.shadowColor = this.color;
+
+      const grd = ctx.createLinearGradient(
+        this.x, this.y,
+        this.x + Math.sin(this.tilt) * this.len,
+        this.y - this.len
+      );
+      grd.addColorStop(0,   this.color + '00');  // tail — transparent
+      grd.addColorStop(0.4, this.color + 'aa');
+      grd.addColorStop(1,   this.color + 'ff');  // head — bright
 
       ctx.strokeStyle = grd;
-      ctx.lineWidth = this.w;
-      ctx.lineCap = 'round';
+      ctx.lineWidth   = this.w;
+      ctx.lineCap     = 'round';
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y);
+      ctx.lineTo(
+        this.x + Math.sin(this.tilt) * this.len,
+        this.y - this.len
+      );
       ctx.stroke();
       ctx.restore();
     }
   }
 
-  // Utility: hex to rgba
-  function hexAlpha(hex, a) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r},${g},${b},${a})`;
-  }
-
-  // ── Resize ───────────────────────────────────────────────────────────────
+  // ── Resize ───────────────────────────────────────────────────────
   function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr  = Math.min(window.devicePixelRatio || 1, 2);
     W = canvas.offsetWidth;
     H = canvas.offsetHeight;
-    canvas.width = W * dpr;
+    canvas.width  = W * dpr;
     canvas.height = H * dpr;
     ctx.scale(dpr, dpr);
 
-    // Focal point just above top-center
-    FX = W * 0.52;
-    FY = -80;
+    // Re-scatter existing streaks on resize
+    streaks.forEach(s => { s.x = Math.random() * W; });
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────
-  function render() {
-    rafId = requestAnimationFrame(render);
+  // ── Init streaks ─────────────────────────────────────────────────
+  function buildStreaks() {
+    streaks = Array.from({ length: CFG.streakCount }, () => new Streak());
+  }
 
-    // Radial gradient background to match reactbits.dev: blue-purple center glow
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1;
-
-    const bgGrd = ctx.createRadialGradient(FX, FY + 100, 50, W / 2, H / 2, Math.max(W, H));
-    bgGrd.addColorStop(0, '#251690');       // bright royal blue-purple glow
-    bgGrd.addColorStop(0.35, '#120F17');    // exact Lightfall background (#120F17)
-    bgGrd.addColorStop(1.0, '#0c0a10');     // dark violet-black edges
-
-    ctx.fillStyle = bgGrd;
+  // ── Ambient glow blobs (static, painted once per frame behind streaks) ──
+  function drawAmbient() {
+    // Deep amber glow top-centre
+    const g1 = ctx.createRadialGradient(W * 0.5, H * 0.08, 0, W * 0.5, H * 0.08, W * 0.55);
+    g1.addColorStop(0,   'rgba(200,120,10,0.13)');
+    g1.addColorStop(0.5, 'rgba(180,100,5,0.05)');
+    g1.addColorStop(1,   'transparent');
+    ctx.fillStyle = g1;
     ctx.fillRect(0, 0, W, H);
 
-    // Draw all streaks
-    streaks.forEach(s => { s.update(); s.draw(); });
+    // Warm side vignette
+    const g2 = ctx.createRadialGradient(0, H * 0.5, 0, 0, H * 0.5, W * 0.5);
+    g2.addColorStop(0,   'rgba(255,160,10,0.06)');
+    g2.addColorStop(1,   'transparent');
+    ctx.fillStyle = g2;
+    ctx.fillRect(0, 0, W, H);
 
-    // Subtle dark vignette overlay
-    const vig = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, Math.max(W, H));
-    vig.addColorStop(0, 'rgba(0,0,0,0)');
-    vig.addColorStop(0.7, 'rgba(0,0,0,0.15)');
+    const g3 = ctx.createRadialGradient(W, H * 0.5, 0, W, H * 0.5, W * 0.5);
+    g3.addColorStop(0,   'rgba(255,160,10,0.04)');
+    g3.addColorStop(1,   'transparent');
+    ctx.fillStyle = g3;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // ── Animation loop ────────────────────────────────────────────────
+  function animate() {
+    rafId = requestAnimationFrame(animate);
+
+    // Background
+    ctx.fillStyle = CFG.bgColor;
+    ctx.fillRect(0, 0, W, H);
+
+    drawAmbient();
+
+    // Sort by alpha ascending so bright streaks paint on top
+    streaks.sort((a, b) => a.baseAlpha - b.baseAlpha);
+
+    streaks.forEach(s => { s.update(); s.draw(ctx); });
+
+    // Vignette overlay — fade edges to black
+    const vig = ctx.createRadialGradient(W/2, H/2, H * 0.28, W/2, H/2, H * 0.85);
+    vig.addColorStop(0, 'transparent');
     vig.addColorStop(1, 'rgba(0,0,0,0.55)');
-    ctx.fillStyle = vig;
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = vig;
     ctx.fillRect(0, 0, W, H);
   }
 
-  // ── Mouse ────────────────────────────────────────────────────────────────
-  const landing = document.getElementById('landing');
-  if (landing) {
-    landing.addEventListener('mousemove', e => {
-      const r = landing.getBoundingClientRect();
+  // ── Mouse tracking ────────────────────────────────────────────────
+  const section = document.getElementById('landing');
+  if (section) {
+    section.addEventListener('mousemove', e => {
+      const r = section.getBoundingClientRect();
       mouse.x = e.clientX - r.left;
       mouse.y = e.clientY - r.top;
     });
-    landing.addEventListener('mouseleave', () => {
-      mouse.x = -9999;
-      mouse.y = -9999;
+    section.addEventListener('mouseleave', () => {
+      mouse.x = -9999; mouse.y = -9999;
     });
   }
 
-  // ── Start ────────────────────────────────────────────────────────────────
+  // ── Start ────────────────────────────────────────────────────────
   resize();
-  streaks = Array.from({ length: COUNT }, () => new Streak(true));
-  render();
+  buildStreaks();
+  animate();
 
   window.addEventListener('resize', () => {
     cancelAnimationFrame(rafId);
     resize();
-    render();
+    animate();
   });
 })();
 
